@@ -1,0 +1,67 @@
+﻿@model BankingViewModel
+@{
+    ViewBag.Title = "Banking details";
+    var banks = TutorConnect.Services.SouthAfricanBanks.All;
+    var chosen = TutorConnect.Services.SouthAfricanBanks.FindByName(Model.BankName);
+    var types = new[] { "Cheque / current", "Savings", "Transmission" };
+}
+<div class="page-head">
+    <div><h1>Banking details</h1><p>Where your share of each paid session is sent. Payouts happen automatically after a student's payment is confirmed.</p></div>
+</div>
+
+<div class="grid grid-aside">
+    <div class="card">
+        <div class="card-head"><h2>@(Model.Existing == null ? "Add your account" : "Update your account")</h2></div>
+        @using (Html.BeginForm("Banking", "Tutor", FormMethod.Post, new { novalidate = "novalidate", autocomplete = "off" }))
+        {
+            @Html.AntiForgeryToken()
+            <div class="card-body">
+                @Html.ValidationSummary(true, "", new { @class = "alert alert-error" })
+                <div class="form-grid">
+                    <div class="field">@Html.LabelFor(m => m.BankName)
+                        <select id="BankName" name="BankName" data-bank-select data-account-input="#AccountNumber" data-branch-input="#BranchCode">
+                            <option value="">Choose your bank</option>
+                            @foreach (var b in banks)
+                            {
+                                <option value="@b.Name" data-lengths="@string.Join(",", b.Lengths)" data-length-text="@b.LengthText" data-branch="@b.BranchCode" @(chosen != null && chosen.Code == b.Code ? "selected" : null)>@b.Name</option>
+                            }
+                        </select>
+                        @Html.ValidationMessageFor(m => m.BankName)</div>
+                    <div class="field">@Html.LabelFor(m => m.AccountType)@Html.DropDownListFor(m => m.AccountType, new SelectList(types), "Choose a type")@Html.ValidationMessageFor(m => m.AccountType)</div>
+                    <div class="field full">@Html.LabelFor(m => m.AccountHolder)@Html.TextBoxFor(m => m.AccountHolder)@Html.ValidationMessageFor(m => m.AccountHolder)</div>
+                    <div class="field">@Html.LabelFor(m => m.BranchCode)@Html.TextBoxFor(m => m.BranchCode, new { inputmode = "numeric", maxlength = "6" })@Html.ValidationMessageFor(m => m.BranchCode)</div>
+                    <div class="field">
+                        @Html.LabelFor(m => m.AccountNumber)
+                        @Html.TextBoxFor(m => m.AccountNumber, new { inputmode = "numeric", maxlength = "20", autocomplete = "off", data_account_number = "", placeholder = Model.Existing == null ? "Choose your bank first" : "Re-enter to confirm (ends " + Model.Existing.AccountLast4 + ")" })
+                        <span class="hint" data-account-hint></span>
+                        @Html.ValidationMessageFor(m => m.AccountNumber)
+                    </div>
+                </div>
+                <div class="form-actions"><button type="submit" class="btn btn-primary">Save banking details</button></div>
+            </div>
+        }
+    </div>
+
+    <div class="stack" style="align-self:start">
+        @if (Model.Existing != null)
+        {
+            <div class="card">
+                <div class="card-head"><h2>On file</h2><span class="badge badge-success">Active</span></div>
+                <div class="card-body">
+                    <dl class="dl" style="grid-template-columns:110px 1fr">
+                        <dt>Bank</dt><dd>@Model.Existing.BankName</dd>
+                        <dt>Holder</dt><dd>@Model.Existing.AccountHolder</dd>
+                        <dt>Account</dt><dd class="mono">&bull;&bull;&bull;&bull; @Model.Existing.AccountLast4</dd>
+                        <dt>Updated</dt><dd>@Ui.Ago(Model.Existing.UpdatedAt)</dd>
+                    </dl>
+                </div>
+            </div>
+        }
+        <div class="card flat">
+            <div class="card-body small text-2">
+                <p><i class="fa-solid fa-lock"></i> <strong>How we store this.</strong> Your account number is encrypted before it's saved, and only the last four digits are ever shown.</p>
+                <p style="margin:0">Payouts that were waiting for banking details are sent as soon as you save.</p>
+            </div>
+        </div>
+    </div>
+</div>

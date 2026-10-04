@@ -1,0 +1,36 @@
+﻿@model List<TutorApplication>
+@{
+    ViewBag.Title = "Tutor applications";
+    var waiting = Model.Count(a => a.Status == "UnderReview");
+}
+<div class="page-head">
+    <div><h1>Tutor applications</h1><p>Applications an administrator has asked you to review. Your recommendation goes back to the administrator, who makes the final decision.</p></div>
+    @if (waiting > 0) { <span class="badge badge-warning">@waiting waiting for you</span> }
+</div>
+<div class="card">
+    @if (Model.Count == 0)
+    {
+        <div class="empty"><i class="fa-solid fa-file-signature"></i><p>No applications have been assigned to you.</p></div>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Applicant</th><th>Module</th><th>Mark</th><th>Submitted</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var a in Model)
+                    {
+                        <tr>
+                            <td><div class="person">@Ui.Avatar(a.FullName, "sm")<div><div>@a.FullName</div><div class="small muted">@a.StudentNumber</div></div></div></td>
+                            <td><span class="tag">@a.ModuleCode</span> <span class="small muted">for year @a.TutorYear</span></td>
+                            <td class="mono">@a.ModuleMark.ToString("0.#")%</td>
+                            <td class="nowrap">@Ui.Date(a.SubmittedAt)</td>
+                            <td>@Ui.Badge(a.Status)</td>
+                            <td class="right"><a class="btn @(a.Status == "UnderReview" ? "btn-primary" : "btn-secondary") btn-sm" href="@Url.Action("Application", new { id = a.ApplicationId })">@(a.Status == "UnderReview" ? "Review" : "View")</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

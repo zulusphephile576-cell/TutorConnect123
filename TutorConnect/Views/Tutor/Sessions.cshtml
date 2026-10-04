@@ -1,0 +1,91 @@
+﻿@model List<Booking>
+@{
+    ViewBag.Title = "Sessions";
+    var pending = Model.Count(b => b.Status == "Pending" && b.IsUpcoming);
+}
+<div class="page-head">
+    <div><h1>Sessions</h1><p>Paid one-on-one bookings. Approve or decline requests, move a session if you need to, and mark attendance once it has started.</p></div>
+    @if (pending > 0) { <span class="badge badge-warning">@pending waiting for you</span> }
+</div>
+
+<div class="card">
+    <div class="table-tools" data-filter-table="#sessions">
+        <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Search student or module" aria-label="Search sessions" /></div>
+        <select data-filter-attr="status" aria-label="Filter by status" style="width:auto">
+            <option value="">All statuses</option>
+            <option>Pending</option><option>Confirmed</option><option>Completed</option><option>Declined</option><option>Cancelled</option>
+        </select>
+    </div>
+    <div class="table-wrap">
+        <table class="table" id="sessions">
+            <thead><tr><th>Student</th><th>Module</th><th>When</th><th>Amount</th><th>Status</th><th>Attendance</th><th class="right">Actions</th></tr></thead>
+            <tbody>
+                @foreach (var b in Model)
+                {
+                    var started = b.StartTime <= TutorConnect.Helpers.Clock.Now;
+                    <tr data-status="@b.Status">
+                        <td><div class="person">@Ui.Avatar(b.StudentName, "sm")<div><div>@b.StudentName</div><div class="small muted">@b.StudentNumber</div></div></div></td>
+                        <td><span class="tag">@b.ModuleCode</span></td>
+                        <td class="nowrap">@Ui.TimeRange(b.StartTime, b.EndTime)<div class="small muted">@b.Hours @(b.Hours == 1 ? "hour" : "hours")</div></td>
+                        <td class="mono">@Ui.Money(b.Amount)</td>
+                        <td>@Ui.Badge(b.Status)</td>
+                        <td>@(b.AttendanceStatus == null ? Html.Raw("<span class=\"muted small\">Not marked</span>") : Ui.Badge(b.AttendanceStatus))</td>
+                        <td>
+                            <div class="actions">
+                                @if (b.Status == "Pending" && !started)
+                                {
+                                    using (Html.BeginForm("SetBookingStatus", "Tutor", new { id = b.BookingId, status = "Confirmed" }, FormMethod.Post))
+                                    {
+                                        @Html.AntiForgeryToken()<button type="submit" class="btn btn-success btn-sm">Approve</button>
+                                    }
+                                    using (Html.BeginForm("SetBookingStatus", "Tutor", new { id = b.BookingId, status = "Declined" }, FormMethod.Post, new { data_confirm = "Decline this request? The slot opens again." }))
+                                    {
+                                        @Html.AntiForgeryToken()<button type="submit" class="btn btn-danger btn-sm">Decline</button>
+                                    }
+                                }
+                                @if ((b.Status == "Pending" || b.Status == "Confirmed") && !started)
+                                {
+                                    <details class="drawer">
+                                        <summary class="btn btn-secondary btn-sm">Reschedule</summary>
+                                        @using (Html.BeginForm("Reschedule", "Tutor", new { id = b.BookingId }, FormMethod.Post, new { @class = "inline-form", style = "margin-top:8px;min-width:280px" }))
+                                        {
+                                            @Html.AntiForgeryToken()
+                                            <div class="field"><label class="sr-only" for="d@(b.BookingId)">New date</label><input type="date" id="d@(b.BookingId)" name="date" value="@b.StartTime.ToString("yyyy-MM-dd")" required /></div>
+                                            <div class="field"><label class="sr-only" for="t@(b.BookingId)">New time</label><input type="time" id="t@(b.BookingId)" name="time" value="@b.StartTime.ToString("HH:mm")" step="900" required /></div>
+                                            <button type="submit" class="btn btn-primary btn-sm">Move</button>
+                                        }
+                                    </details>
+                                }
+                                @if (b.Status == "Confirmed" && !started)
+                                {
+                                    using (Html.BeginForm("SetBookingStatus", "Tutor", new { id = b.BookingId, status = "Cancelled" }, FormMethod.Post, new { data_confirm = "Cancel this confirmed session? The student will be notified." }))
+                                    {
+                                        @Html.AntiForgeryToken()<button type="submit" class="btn btn-ghost btn-sm">Cancel</button>
+                                    }
+                                }
+                                @if ((b.Status == "Confirmed" || b.Status == "Completed") && started)
+                                {
+                                    using (Html.BeginForm("MarkSessionAttendance", "Tutor", new { id = b.BookingId }, FormMethod.Post))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <span class="att-buttons" role="group" aria-label="Attendance for @b.StudentName">
+                                            @foreach (var st in new[] { "Present", "Absent" })
+                                            {
+                                                <button type="submit" name="status" value="@st" data-status="@st" class="@(b.AttendanceStatus == st ? "on" : null)">@st</button>
+                                            }
+                                        </span>
+                                    }
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+                <tr class="no-results"><td colspan="7"><div class="empty">No sessions match your filters.</div></td></tr>
+            </tbody>
+        </table>
+    </div>
+    @if (Model.Count == 0)
+    {
+        <div class="empty"><i class="fa-regular fa-calendar"></i><p>No bookings yet. Students can book once you've added availability.</p><a class="btn btn-primary btn-sm" href="@Url.Action("Availability")">Add availability</a></div>
+    }
+</div>

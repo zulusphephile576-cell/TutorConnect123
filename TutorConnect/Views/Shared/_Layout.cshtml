@@ -1,0 +1,239 @@
+﻿@{
+    var role = Session["Role"] as string;
+    var name = (Session["Name"] as string) ?? "";
+    var dark = (Session["DarkMode"] as bool?) ?? false;
+    var controller = (ViewContext.RouteData.Values["controller"] ?? "").ToString();
+    var action = (ViewContext.RouteData.Values["action"] ?? "").ToString();
+
+    // label, icon, controller, action, other actions that should highlight this item
+    var nav = new List<string[]>();
+    var groups = new List<KeyValuePair<string, int>>();
+    if (role == "Student")
+    {
+        nav.Add(new[] { "Dashboard", "fa-house", "Student", "Dashboard", "" });
+        nav.Add(new[] { "Schedule", "fa-calendar-week", "Student", "Schedule", "" });
+        nav.Add(new[] { "Find a tutor", "fa-magnifying-glass", "Student", "FindTutor", "Book" });
+        nav.Add(new[] { "My bookings", "fa-calendar-check", "Student", "Bookings", "" });
+        nav.Add(new[] { "Tutorials", "fa-chalkboard-user", "Student", "Tutorials", "Tutorial,CheckIn" });
+        nav.Add(new[] { "Attendance", "fa-clipboard-check", "Student", "Attendance", "" });
+        nav.Add(new[] { "My modules", "fa-book", "Student", "Modules", "" });
+        nav.Add(new[] { "Course content", "fa-folder-open", "Student", "Content", "" });
+        nav.Add(new[] { "AI study assistant", "fa-wand-magic-sparkles", "Assistant", "Index", "" });
+        groups.Add(new KeyValuePair<string, int>("Learning", 9));
+        nav.Add(new[] { "Become a tutor", "fa-hand-holding-heart", "TutorApplication", "Apply", "" });
+        nav.Add(new[] { "Application status", "fa-list-check", "TutorApplication", "Status", "" });
+        groups.Add(new KeyValuePair<string, int>("Tutoring", 2));
+    }
+    else if (role == "Tutor")
+    {
+        nav.Add(new[] { "Dashboard", "fa-house", "Tutor", "Dashboard", "" });
+        nav.Add(new[] { "Schedule", "fa-calendar-week", "Tutor", "Schedule", "" });
+        nav.Add(new[] { "Sessions", "fa-calendar-check", "Tutor", "Sessions", "" });
+        nav.Add(new[] { "Availability", "fa-clock", "Tutor", "Availability", "" });
+        groups.Add(new KeyValuePair<string, int>("Schedule", 4));
+        nav.Add(new[] { "My modules", "fa-book", "Tutor", "Modules", "" });
+        nav.Add(new[] { "Tutorials", "fa-chalkboard-user", "Tutor", "Tutorials", "Register,QrCode,CreateTutorial,EditTutorial" });
+        nav.Add(new[] { "Class registers", "fa-clipboard-list", "Tutor", "Registers", "ClassRegister" });
+        nav.Add(new[] { "Course content", "fa-folder-open", "Tutor", "Content", "" });
+        nav.Add(new[] { "Announcements", "fa-bullhorn", "Tutor", "Announcements", "" });
+        nav.Add(new[] { "AI study assistant", "fa-wand-magic-sparkles", "Assistant", "Index", "" });
+        groups.Add(new KeyValuePair<string, int>("Teaching", 6));
+        nav.Add(new[] { "Reports", "fa-chart-simple", "Tutor", "Reports", "" });
+        nav.Add(new[] { "Banking details", "fa-building-columns", "Tutor", "Banking", "" });
+        groups.Add(new KeyValuePair<string, int>("Earnings", 2));
+    }
+    else if (role == "Lecturer")
+    {
+        nav.Add(new[] { "Dashboard", "fa-house", "Lecturer", "Dashboard", "" });
+        nav.Add(new[] { "My modules", "fa-book", "Lecturer", "Modules", "" });
+        nav.Add(new[] { "Assign tutors", "fa-user-plus", "Lecturer", "AssignTutors", "" });
+        nav.Add(new[] { "Course content", "fa-folder-open", "Lecturer", "Content", "" });
+        nav.Add(new[] { "Tutor applications", "fa-file-signature", "Lecturer", "Applications", "Application" });
+        groups.Add(new KeyValuePair<string, int>("Manage", 5));
+        nav.Add(new[] { "Tutorials", "fa-chalkboard-user", "Lecturer", "Tutorials", "" });
+        nav.Add(new[] { "Attendance", "fa-clipboard-check", "Lecturer", "Attendance", "" });
+        nav.Add(new[] { "Progress", "fa-chart-line", "Lecturer", "Progress", "" });
+        groups.Add(new KeyValuePair<string, int>("Review", 3));
+    }
+    else if (role == "Admin")
+    {
+        nav.Add(new[] { "Dashboard", "fa-house", "Admin", "Dashboard", "" });
+        nav.Add(new[] { "Users", "fa-users", "Admin", "Users", "EditUser,CreateLecturer" });
+        nav.Add(new[] { "Tutor applications", "fa-file-signature", "Admin", "Applications", "Application" });
+        groups.Add(new KeyValuePair<string, int>("People", 3));
+        nav.Add(new[] { "Modules", "fa-book", "Admin", "Modules", "" });
+        nav.Add(new[] { "Faculties", "fa-building-columns", "Admin", "Faculties", "" });
+        nav.Add(new[] { "Courses", "fa-graduation-cap", "Admin", "Courses", "CreateCourse" });
+        groups.Add(new KeyValuePair<string, int>("Academics", 3));
+        nav.Add(new[] { "Attendance", "fa-clipboard-check", "Admin", "Attendance", "" });
+        nav.Add(new[] { "Analytics", "fa-chart-pie", "Admin", "Analytics", "" });
+        nav.Add(new[] { "Transactions", "fa-money-bill-transfer", "Admin", "Transactions", "" });
+        nav.Add(new[] { "Email", "fa-envelope", "Admin", "Email", "" });
+        groups.Add(new KeyValuePair<string, int>("Insight", 4));
+    }
+    var flash = TempData["Flash"] as string;
+    var flashType = (TempData["FlashType"] as string) ?? "success";
+    if (Request.QueryString["tooLarge"] == "1")
+    {
+        flash = "Your files were too large to send together (the limit is 50 MB in total). Choose smaller files, for example a PDF scan instead of a phone photo, and try again.";
+        flashType = "error";
+    }
+    var flashIcon = flashType == "error" ? "fa-circle-exclamation" : flashType == "info" ? "fa-circle-info" : "fa-circle-check";
+    var remindersUrl = (role == "Student" || role == "Tutor") ? Url.Action("Reminders", "Notifications") : null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@(ViewBag.Title ?? "TutorConnect") | TutorConnect</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" /></noscript>
+    <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" /></noscript>
+    <link rel="stylesheet" href="@Ui.Asset("~/Content/site.css")" />
+</head>
+<body class="@(dark ? "dark" : null)" data-reminders-url="@remindersUrl">
+    <a class="sr-only" href="#main">Skip to content</a>
+    @if (role == null)
+    {
+        <header class="public-top">
+            <a class="brand" href="@Url.Action("Index", "Home")"><span class="brand-mark"><i class="fa-solid fa-graduation-cap"></i></span>TutorConnect</a>
+            <div class="row">
+                <a class="btn btn-ghost" href="@Url.Action("Status", "TutorApplication")">Application status</a>
+                <a class="btn btn-primary" href="@Url.Action("Login", "Account")">Sign in</a>
+            </div>
+        </header>
+        <main id="main" class="public-wrap">
+            @if (flash != null)
+            {
+                <div class="alert alert-@flashType" role="status"><i class="fa-solid @flashIcon"></i><div class="alert-body">@flash</div><button type="button" class="close" aria-label="Dismiss"><i class="fa-solid fa-xmark"></i></button></div>
+            }
+            @RenderBody()
+        </main>
+    }
+    else
+    {
+        <div class="app">
+            <aside class="sidebar" aria-label="Main navigation">
+                <a class="brand" href="@Url.Action("Index", "Home")">
+                    <span class="brand-mark"><i class="fa-solid fa-graduation-cap"></i></span>
+                    <span>TutorConnect<span class="brand-sub">@role workspace</span></span>
+                </a>
+                @{ var index = 0; }
+                @foreach (var g in groups)
+                {
+                    <nav class="nav-group">
+                        <div class="nav-label">@g.Key</div>
+                        @for (var i = 0; i < g.Value; i++)
+                        {
+                            var item = nav[index++];
+                            var extra = item[4].Split(',');
+                            var active = string.Equals(controller, item[2], StringComparison.OrdinalIgnoreCase)
+                                && (string.Equals(action, item[3], StringComparison.OrdinalIgnoreCase) || extra.Contains(action));
+                            <a class="nav-link @(active ? "active" : "")" href="@Url.Action(item[3], item[2])" @(active ? Html.Raw("aria-current=\"page\"") : null)>
+                                <i class="fa-solid @item[1]" aria-hidden="true"></i><span>@item[0]</span>
+                            </a>
+                        }
+                    </nav>
+                }
+                <div class="sidebar-foot">
+                    <a class="nav-link @(controller == "Account" && action == "Settings" ? "active" : "")" href="@Url.Action("Settings", "Account")"><i class="fa-solid fa-gear" aria-hidden="true"></i><span>Settings</span></a>
+                    <div class="side-profile">
+                        @Ui.Avatar(name, "sm")
+                        <div class="side-profile-text"><div class="side-profile-name">@name</div><div class="side-profile-role">@role</div></div>
+                        @using (Html.BeginForm("Logout", "Account", FormMethod.Post, new { @class = "side-logout" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="icon-btn icon-btn-ink" aria-label="Sign out" title="Sign out"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+                        }
+                    </div>
+                </div>
+            </aside>
+            <div class="scrim"></div>
+
+            <div class="main">
+                <header class="topbar">
+                    <button type="button" class="icon-btn menu-toggle" data-nav-toggle aria-label="Open menu" aria-expanded="false"><i class="fa-solid fa-bars"></i></button>
+                    <div class="topbar-heading">
+                        <span class="topbar-title">@(ViewBag.Title ?? "")</span>
+                        <span class="topbar-date" data-sast-clock>@TutorConnect.Helpers.Clock.Now.ToString("dddd d MMMM, HH:mm", System.Globalization.CultureInfo.InvariantCulture) SAST</span>
+                    </div>
+                    <button type="button" class="search-trigger" data-palette-open aria-label="Search pages and actions">
+                        <i class="fa-solid fa-magnifying-glass"></i><span>Jump to a page or action</span><kbd>Ctrl K</kbd>
+                    </button>
+                    <div class="topbar-actions">
+                        <button type="button" class="icon-btn" id="themeToggle" data-url="@Url.Action("ToggleTheme", "Account")" aria-label="Toggle dark mode" title="Toggle dark mode">
+                            <i class="fa-solid @(dark ? "fa-sun" : "fa-moon")"></i>
+                        </button>
+                        <div class="menu" data-notifications data-url="@Url.Action("Recent", "Notifications")" data-seen-url="@Url.Action("MarkSeen", "Notifications")">
+                            <button type="button" class="icon-btn" data-menu-button aria-haspopup="true" aria-expanded="false" aria-label="Notifications">
+                                <i class="fa-regular fa-bell"></i><span class="bell-count" hidden>0</span>
+                            </button>
+                            <div class="menu-panel notif-panel" role="dialog" aria-label="Notifications" hidden>
+                                <div class="menu-head"><b>Notifications</b><span class="muted small" data-notif-status></span></div>
+                                <ul class="notif-list" data-notif-list><li class="notif-empty">Loading&hellip;</li></ul>
+                                <a class="notif-all" href="@Url.Action("Index", "Notifications")">See all notifications<i class="fa-solid fa-arrow-right"></i></a>
+                            </div>
+                        </div>
+                        <div class="menu">
+                            <button type="button" class="user-chip" data-menu-button aria-haspopup="true" aria-expanded="false">
+                                @Ui.Avatar(name, "sm")
+                                <span class="user-chip-text"><span class="user-chip-name">@name</span><br /><span class="user-chip-role">@role</span></span>
+                                <i class="fa-solid fa-chevron-down user-chip-caret"></i>
+                            </button>
+                            <div class="menu-panel" role="menu" hidden>
+                                <div class="menu-head"><b>@name</b><span class="muted small">@(Session["Email"])</span></div>
+                                <a class="menu-item" role="menuitem" href="@Url.Action("Settings", "Account")"><i class="fa-solid fa-gear"></i>Settings</a>
+                                <a class="menu-item" role="menuitem" href="@Url.Action("Settings", "Account")#password"><i class="fa-solid fa-key"></i>Change password</a>
+                                @using (Html.BeginForm("Logout", "Account", FormMethod.Post))
+                                {
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="menu-item danger" role="menuitem"><i class="fa-solid fa-arrow-right-from-bracket"></i>Sign out</button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </header>
+                <main id="main" class="content">
+                    @if (Session["NeedsConsent"] as bool? == true)
+                    {
+                        <div class="alert alert-info consent-banner" role="region" aria-label="Privacy consent">
+                            <i class="fa-solid fa-shield-halved"></i>
+                            <div class="alert-body"><b>Please review our privacy notice.</b> Under POPIA we need your consent to keep processing your information. <a href="@Url.Action("Privacy", "Home")" target="_blank" rel="noopener">Read the notice</a></div>
+                            @using (Html.BeginForm("AcceptPrivacy", "Account", new { returnUrl = Request.RawUrl }, FormMethod.Post))
+                            {
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-primary btn-sm">I accept</button>
+                            }
+                        </div>
+                    }
+                    @if (flash != null)
+                    {
+                        <div class="alert alert-@flashType" role="status"><i class="fa-solid @flashIcon"></i><div class="alert-body">@flash</div><button type="button" class="close" aria-label="Dismiss"><i class="fa-solid fa-xmark"></i></button></div>
+                    }
+                    @RenderBody()
+                </main>
+            </div>
+        </div>
+    }
+
+    <form id="af-token" hidden>@Html.AntiForgeryToken()</form>
+    <div id="toasts" class="toast-stack" aria-live="polite"></div>
+    @if (role != null)
+    {
+        <div class="palette" id="palette" hidden>
+            <div class="palette-scrim" data-palette-close></div>
+            <div class="palette-box" role="dialog" aria-modal="true" aria-label="Jump to">
+                <div class="palette-input"><i class="fa-solid fa-magnifying-glass"></i><input type="text" placeholder="Type a page or action, e.g. bookings" aria-label="Search pages and actions" autocomplete="off" /><kbd>Esc</kbd></div>
+                <ul class="palette-list" role="listbox"></ul>
+                <div class="palette-foot"><span><kbd>&uarr;</kbd><kbd>&darr;</kbd> to move</span><span><kbd>Enter</kbd> to open</span></div>
+            </div>
+        </div>
+    }
+    @RenderSection("scripts", required: false)
+    <script src="@Ui.Asset("~/Scripts/site.js")"></script>
+</body>
+</html>

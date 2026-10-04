@@ -1,0 +1,157 @@
+﻿@model List<Course>
+@{
+    ViewBag.Title = "Courses";
+    var links = (List<Module>)ViewBag.CourseModules;
+    var all = (List<Module>)ViewBag.AllModules;
+    var departments = (ViewBag.Departments as List<Department>) ?? new List<Department>();
+    var faculties = (ViewBag.Faculties as List<Faculty>) ?? new List<Faculty>();
+    var groups = Model.GroupBy(c => new { Faculty = c.FacultyName ?? "Not assigned to a faculty", Department = c.DepartmentName ?? "No department" }).ToList();
+}
+<div class="page-head">
+    <div><h1>Courses</h1><p>Students are registered for a course's modules at their year of study. Linking a module registers existing students automatically.</p></div>
+    <div class="page-actions">
+        <a class="btn btn-secondary" href="@Url.Action("Faculties")"><i class="fa-solid fa-building-columns"></i>Faculties and departments</a>
+        <a class="btn btn-primary" href="@Url.Action("CreateCourse")"><i class="fa-solid fa-plus"></i>New course</a>
+    </div>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="card"><div class="empty"><i class="fa-solid fa-graduation-cap"></i><p>No courses yet.</p><a class="btn btn-primary btn-sm" href="@Url.Action("CreateCourse")">Create the first course</a></div></div>
+}
+else
+{
+    <div class="card mb filter-bar" data-filter-table="#course-list">
+        <div class="table-tools" style="border:0">
+            <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Search course name or code" aria-label="Search courses" /></div>
+            <select id="fFaculty" data-filter-attr="faculty" aria-label="Filter by faculty" style="width:auto;max-width:280px">
+                <option value="">All faculties</option>
+                @foreach (var f in faculties) { <option value="@f.FacultyId">@f.Name</option> }
+            </select>
+            <select data-filter-attr="department" data-depends-on="#fFaculty" aria-label="Filter by department" style="width:auto;max-width:280px">
+                <option value="">All departments</option>
+                @foreach (var d in departments) { <option value="@d.DepartmentId" data-parent="@d.FacultyId">@d.Name</option> }
+            </select>
+            <span class="muted small" data-filter-count></span>
+        </div>
+    </div>
+
+    <div class="stack" id="course-list">
+        @foreach (var g in groups)
+        {
+            <section class="stack" data-filter-group>
+                <div class="course-group">
+                    <span class="course-group-faculty"><i class="fa-solid fa-building-columns"></i>@g.Key.Faculty</span>
+                    <i class="fa-solid fa-chevron-right course-group-sep" aria-hidden="true"></i>
+                    <span>@g.Key.Department</span>
+                    <span class="muted small">@g.Count() @(g.Count() == 1 ? "course" : "courses")</span>
+                </div>
+                @foreach (var c in g)
+                {
+                    var mine = links.Where(l => l.CourseId == c.CourseId).OrderBy(l => l.YearLevel).ThenBy(l => l.Code).ToList();
+                    var available = all.Where(m => !mine.Any(x => x.ModuleId == m.ModuleId)).OrderBy(m => m.YearLevel).ThenBy(m => m.Code).ToList();
+                    <div class="card course-card" data-filter-item data-faculty="@c.FacultyId" data-department="@c.DepartmentId" data-year-tabs>
+                        @{
+                            var years = Enumerable.Range(1, Math.Max(4, mine.Concat(available).Select(x => x.YearLevel).DefaultIfEmpty(1).Max())).ToList();
+                            var defaultYear = mine.Select(x => x.YearLevel).DefaultIfEmpty(1).Min();
+                        }
+
+                        <div class="card-head">
+                            <div>
+                                <h2><span class="tag">@c.Code</span> @c.Name</h2>
+                                <p><i class="fa-solid fa-building-columns"></i> @(c.FacultyName ?? "No faculty") &rsaquo; @(c.DepartmentName ?? "No department") &middot; @c.ModuleCount @(c.ModuleCount == 1 ? "module" : "modules") &middot; @c.StudentCount @(c.StudentCount == 1 ? "student" : "students")</p>
+                            </div>
+                            @using (Html.BeginForm("DeleteCourse", "Admin", new { id = c.CourseId }, FormMethod.Post, new { data_confirm = "Delete " + c.Name + "?" }))
+                            {
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-ghost btn-sm" @(c.StudentCount > 0 ? Html.Raw("disabled title=\"Students are registered for this course\"") : null)><i class="fa-regular fa-trash-can"></i>Delete</button>
+                            }
+                        </div>
+
+                        <div class="year-tabs" role="tablist" aria-label="Year of study for @c.Code">
+                            @foreach (var y in years)
+                            {
+                                var n = mine.Count(x => x.YearLevel == y);
+                                <button type="button" class="year-tab" role="tab" data-year-tab="@y">Year @y <span class="year-count @(n == 0 ? "zero" : null)">@n</span></button>
+                            }
+                        </div>
+                        @foreach (var y in years)
+                        {
+                            var yearMods = mine.Where(x => x.YearLevel == y).ToList();
+                            <div class="year-panel" role="tabpanel" data-year-panel="@y">
+                                @if (yearMods.Count == 0)
+                                {
+                                    <div class="empty" style="padding:18px"><p style="margin:0">No year @y modules linked to @c.Code yet. Link one below.</p></div>
+                                }
+                                else
+                                {
+                                    foreach (var sem in yearMods.GroupBy(x => x.Semester).OrderBy(sg => sg.Key))
+                                    {
+                                        <div class="sem-head"><span class="sem-chip sem-@sem.Key">Semester @sem.Key</span><span class="muted small">@sem.Count() @(sem.Count() == 1 ? "module" : "modules")</span></div>
+                                        <ul class="year-modules">
+                                        @foreach (var m in sem)
+                                        {
+                                            <li>
+                                                <span><span class="tag">@m.Code</span> @m.Name</span>
+                                                @using (Html.BeginForm("UnlinkModule", "Admin", new { courseId = c.CourseId, moduleId = m.ModuleId }, FormMethod.Post, new { data_confirm = "Unlink " + m.Code + " from " + c.Code + "? Students in this course lose it from their module list." }))
+                                                {
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-ghost btn-sm" aria-label="Unlink @m.Code"><i class="fa-solid fa-link-slash"></i></button>
+                                                }
+                                            </li>
+                                        }
+                                    </ul>
+                                    }
+                                }
+                            </div>
+                        }
+
+                        <div class="card-foot">
+                            @using (Html.BeginForm("LinkModule", "Admin", new { courseId = c.CourseId }, FormMethod.Post, new { @class = "inline-form" }))
+                            {
+                                @Html.AntiForgeryToken()
+                                <div class="field" style="max-width:150px">
+                                    <label for="year-@c.CourseId" class="small muted">Year of study</label>
+                                    <select id="year-@c.CourseId" data-link-year data-year-source="#link-@c.CourseId">
+                                        @foreach (var y in years) { <option value="@y" @(y == defaultYear ? "selected" : null)>Year @y</option> }
+                                    </select>
+                                </div>
+                                <div class="field" style="max-width:220px">
+                                    <label for="find-@c.CourseId" class="small muted">Find a module</label>
+                                    <input type="search" id="find-@c.CourseId" data-option-filter="#link-@c.CourseId" placeholder="Code or name" @(available.Count == 0 ? "disabled" : null) />
+                                </div>
+                                <div class="field">
+                                    <label for="link-@c.CourseId" class="small muted">Link to @c.Code (placed under @(c.DepartmentName ?? "its department") automatically)</label>
+                                    <select id="link-@c.CourseId" name="moduleId" @(available.Count == 0 ? "disabled" : null)>
+                                        <option value="">@(available.Count == 0 ? "Every module is already linked" : "Choose a module")</option>
+                                        @foreach (var m in available.OrderBy(x => x.Code)) { <option value="@m.ModuleId" data-year="@m.YearLevel">@m.Code, @m.Name (semester @m.Semester)</option> }
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-secondary" @(available.Count == 0 ? "disabled" : null)><i class="fa-solid fa-link"></i>Link module</button>
+                            }
+                            <details class="drawer" style="margin-top:10px">
+                                <summary class="small muted"><i class="fa-solid fa-right-left"></i> Move this course to another department</summary>
+                                @using (Html.BeginForm("MoveCourse", "Admin", new { courseId = c.CourseId }, FormMethod.Post, new { @class = "inline-form", style = "margin-top:10px" }))
+                                {
+                                    @Html.AntiForgeryToken()
+                                    <div class="field">
+                                        <select name="departmentId" aria-label="New department for @c.Code">
+                                            @foreach (var fg in departments.GroupBy(d => d.FacultyName))
+                                            {
+                                                <optgroup label="@fg.Key">
+                                                    @foreach (var d in fg) { <option value="@d.DepartmentId" @(c.DepartmentId == d.DepartmentId ? "selected" : null)>@d.Name</option> }
+                                                </optgroup>
+                                            }
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-secondary btn-sm">Move</button>
+                                }
+                            </details>
+                        </div>
+                    </div>
+                }
+            </section>
+        }
+        <div class="card no-results"><div class="empty"><i class="fa-solid fa-magnifying-glass"></i><p>No courses match your search.</p></div></div>
+    </div>
+}

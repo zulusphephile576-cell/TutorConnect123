@@ -1,0 +1,258 @@
+﻿@model AnalyticsViewModel
+@{
+    ViewBag.Title = "Analytics";
+    var detail = ViewBag.Detail as System.Data.DataSet;
+    Func<int, System.Data.DataTable> T = i => detail != null && detail.Tables.Count > i ? detail.Tables[i] : null;
+    var totals = T(12) != null && T(12).Rows.Count > 0 ? T(12).Rows[0] : null;
+    Func<string, string> tot = k => totals == null || !totals.Table.Columns.Contains(k) || totals[k] == DBNull.Value ? "0" : Convert.ToString(totals[k], System.Globalization.CultureInfo.InvariantCulture);
+    var money = T(4); var byStatus = T(3);
+    var moneyLabels = System.Web.Helpers.Json.Encode(money == null ? new List<string>() : money.Rows.Cast<System.Data.DataRow>().Select(r => Convert.ToString(r["Label"])).ToList());
+    var moneyIn = System.Web.Helpers.Json.Encode(money == null ? new List<decimal>() : money.Rows.Cast<System.Data.DataRow>().Select(r => r["Collected"] == DBNull.Value ? 0m : Convert.ToDecimal(r["Collected"])).ToList());
+    var moneyOut = System.Web.Helpers.Json.Encode(money == null ? new List<decimal>() : money.Rows.Cast<System.Data.DataRow>().Select(r => r["PaidOut"] == DBNull.Value ? 0m : Convert.ToDecimal(r["PaidOut"])).ToList());
+    var statusLabels = System.Web.Helpers.Json.Encode(byStatus == null ? new List<string>() : byStatus.Rows.Cast<System.Data.DataRow>().Select(r => Convert.ToString(r["Label"])).ToList());
+    var statusValues = System.Web.Helpers.Json.Encode(byStatus == null ? new List<int>() : byStatus.Rows.Cast<System.Data.DataRow>().Select(r => Convert.ToInt32(r["Value"])).ToList());
+    var sectionsNav = new[] { new[] { "totals", "Totals" }, new[] { "money", "Money" }, new[] { "faculties", "Faculties" }, new[] { "departments", "Departments" },
+        new[] { "courses", "Courses" }, new[] { "staffing", "Tutor staffing" }, new[] { "lecturers", "Lecturers" }, new[] { "tutors", "Tutors" },
+        new[] { "tutorials", "Tutorials" }, new[] { "applications", "Applications" }, new[] { "ai", "AI assistant" }, new[] { "overview", "Overview charts" } };
+    var trendLabels = System.Web.Helpers.Json.Encode(Model.RegistrationTrend.Select(x => x.Label).ToList());
+    var trendValues = System.Web.Helpers.Json.Encode(Model.RegistrationTrend.Select(x => x.Value).ToList());
+    var roleLabels = System.Web.Helpers.Json.Encode(Model.RoleBreakdown.Select(x => x.Label).ToList());
+    var roleValues = System.Web.Helpers.Json.Encode(Model.RoleBreakdown.Select(x => x.Value).ToList());
+    var funnelLabels = System.Web.Helpers.Json.Encode(Model.ApplicationFunnel.Select(x => System.Text.RegularExpressions.Regex.Replace(x.Label, "([a-z])([A-Z])", "$1 $2")).ToList());
+    var funnelValues = System.Web.Helpers.Json.Encode(Model.ApplicationFunnel.Select(x => x.Value).ToList());
+    var years = Model.CourseYears.Where(c => c.YearOfStudy.HasValue).Select(c => c.YearOfStudy.Value).Distinct().OrderBy(y => y).ToList();
+    var courses = Model.CourseYears.Select(c => c.CourseName).Distinct().ToList();
+}
+<div class="page-head">
+    <div><h1>Analytics</h1><p>Registrations, applications, attendance and tutor coverage across the whole platform.</p></div>
+</div>
+
+<nav class="jump-nav mb" aria-label="Analytics sections">
+    @foreach (var n in sectionsNav) { <a href="#@n[0]">@n[1]</a> }
+</nav>
+
+@if (detail == null)
+{
+    <div class="alert alert-warning"><i class="fa-solid fa-triangle-exclamation"></i><div class="alert-body">Detailed analytics couldn't be loaded. Open <a href="@Url.Action("Index", "Setup")">Setup</a> to update the database.</div></div>
+}
+else
+{
+    <div id="totals" class="stats mb">
+        <div class="stat"><div class="stat-top">Active students<span class="stat-icon"><i class="fa-solid fa-user-graduate"></i></span></div><div class="stat-value">@tot("Students")</div></div>
+        <div class="stat"><div class="stat-top">Active tutors<span class="stat-icon info"><i class="fa-solid fa-chalkboard-user"></i></span></div><div class="stat-value">@tot("Tutors")</div><div class="stat-note">@tot("TutorPlacements") placements of @tot("TutorsNeeded") needed</div></div>
+        <div class="stat"><div class="stat-top">Lecturers<span class="stat-icon warning"><i class="fa-solid fa-user-tie"></i></span></div><div class="stat-value">@tot("Lecturers")</div></div>
+        <div class="stat feature"><div class="stat-top">Revenue collected<span class="stat-icon success"><i class="fa-solid fa-money-bill-wave"></i></span></div><div class="stat-value">@Ui.Money(Convert.ToDecimal(tot("Revenue"), System.Globalization.CultureInfo.InvariantCulture))</div></div>
+        <div class="stat"><div class="stat-top">Faculties / departments</div><div class="stat-value">@tot("Faculties") / @tot("Departments")</div></div>
+        <div class="stat"><div class="stat-top">Courses / modules</div><div class="stat-value">@tot("Courses") / @tot("Modules")</div></div>
+        <div class="stat"><div class="stat-top">Bookings / tutorials</div><div class="stat-value">@tot("Bookings") / @tot("Tutorials")</div></div>
+        <div class="stat"><div class="stat-top">Open booking slots</div><div class="stat-value">@tot("OpenSlots")</div><div class="stat-note">@tot("AiRequests") AI assistant questions</div></div>
+    </div>
+
+    <div id="money" class="grid grid-main mb">
+        <div class="card"><div class="card-head"><div><h2>Money per month</h2><p>Collected from students and paid out to tutors, last 12 months (ZAR)</p></div></div>
+            <div class="card-body"><div class="chart-box"><canvas id="moneyChart" role="img" aria-label="Money collected and paid out per month"></canvas></div></div></div>
+        <div class="card"><div class="card-head"><h2>Bookings by status</h2></div>
+            <div class="card-body"><div class="chart-box"><canvas id="bookingChart" role="img" aria-label="Bookings by status"></canvas></div></div></div>
+    </div>
+    @Html.Partial("_DataTableCard", T(4), new ViewDataDictionary { { "Title", "Money per month" }, { "Subtitle", "Payments collected and payouts sent" }, { "Hide", "MonthStart" } })
+    @Html.Partial("_DataTableCard", T(11), new ViewDataDictionary { { "Title", "Payments and payouts by status" }, { "BadgeLabels", "yes" } })
+    @Html.Partial("_DataTableCard", T(3), new ViewDataDictionary { { "Title", "Bookings by status" }, { "BadgeLabels", "yes" } })
+    @Html.Partial("_DataTableCard", T(0), new ViewDataDictionary { { "Title", "Faculties" }, { "Anchor", "faculties" }, { "Subtitle", "Departments, courses, modules and students in each faculty" } })
+    @Html.Partial("_DataTableCard", T(1), new ViewDataDictionary { { "Title", "Departments" }, { "Anchor", "departments" } })
+    @Html.Partial("_DataTableCard", T(2), new ViewDataDictionary { { "Title", "Courses" }, { "Anchor", "courses" }, { "Subtitle", "Students per course and year of study" } })
+    @Html.Partial("_DataTableCard", T(5), new ViewDataDictionary { { "Title", "Tutor staffing per module" }, { "Anchor", "staffing" }, { "Subtitle", "Tutors each lecturer asked for, tutors assigned, and open booking slots" } })
+    @Html.Partial("_DataTableCard", T(6), new ViewDataDictionary { { "Title", "Lecturer workload" }, { "Anchor", "lecturers" } })
+    @Html.Partial("_DataTableCard", T(7), new ViewDataDictionary { { "Title", "Tutors ranked by activity" }, { "Anchor", "tutors" }, { "Subtitle", "Sessions, hours, tutorials, open slots and money paid out" } })
+    @Html.Partial("_DataTableCard", T(8), new ViewDataDictionary { { "Title", "Tutorials and check-ins" }, { "Anchor", "tutorials" }, { "Subtitle", "Per module: tutorials run and how students were marked" } })
+    @Html.Partial("_DataTableCard", T(9), new ViewDataDictionary { { "Title", "Tutor applications per module" }, { "Anchor", "applications" } })
+    @Html.Partial("_DataTableCard", T(10), new ViewDataDictionary { { "Title", "AI study assistant use" }, { "Anchor", "ai" }, { "Subtitle", "Questions per module and mode (question content is never stored)" } })
+    <h2 id="overview" style="margin:28px 0 14px">Overview charts</h2>
+}
+
+
+<div class="grid grid-main mb">
+    <div class="card">
+        <div class="card-head"><div><h2>New accounts</h2><p>Last 12 months, all roles</p></div></div>
+        <div class="card-body"><div class="chart-box"><canvas id="trendChart" aria-label="New accounts per month" role="img"></canvas></div></div>
+    </div>
+    <div class="card">
+        <div class="card-head"><h2>Active users by role</h2></div>
+        <div class="card-body"><div class="chart-box"><canvas id="roleChart" aria-label="Active users by role" role="img"></canvas></div></div>
+    </div>
+</div>
+
+<div class="grid grid-2 mb">
+    <div class="card">
+        <div class="card-head"><h2>Tutor application funnel</h2></div>
+        <div class="card-body"><div class="chart-box"><canvas id="funnelChart" aria-label="Applications by status" role="img"></canvas></div></div>
+    </div>
+    <div class="card">
+        <div class="card-head"><div><h2>Attendance by module</h2><p>Present, all sources</p></div></div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Module</th><th class="right">Records</th><th style="width:45%">Rate</th></tr></thead>
+                <tbody>
+                    @foreach (var m in Model.AttendanceByModule)
+                    {
+                        <tr>
+                            <td><span class="tag">@m.ModuleCode</span></td>
+                            <td class="right mono">@m.Total</td>
+                            <td>@if (m.Total == 0) { <span class="muted small">No records</span> } else { <div class="rate"><div class="progress @Ui.RateTone(m.Rate)"><span style="width:@(m.Rate.ToString(System.Globalization.CultureInfo.InvariantCulture))%"></span></div><b>@Ui.Percent(m.Rate)</b></div> }</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-2 mb">
+    <div class="card">
+        <div class="card-head"><div><h2>Modules without a tutor</h2><p>Students here can't book one-on-one help yet</p></div></div>
+        @if (Model.ModulesWithoutTutor.Count == 0)
+        {
+            <div class="empty"><i class="fa-solid fa-circle-check"></i><p>Every module has at least one tutor.</p></div>
+        }
+        else
+        {
+            <ul class="list">
+                @foreach (var m in Model.ModulesWithoutTutor)
+                {
+                    <li class="list-item">
+                        <span class="tag">@m.Code</span>
+                        <div class="list-main"><div class="list-title">@m.Name</div><div class="list-meta">Year @m.YearLevel, lecturer: @(m.LecturerName ?? "none")</div></div>
+                        <div class="list-side small"><b>@m.StudentCount</b> <span class="muted">students</span></div>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+    <div class="card">
+        <div class="card-head"><h2>Students by course and year</h2></div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Course</th>@foreach (var y in years) { <th class="right">Year @y</th> }</tr></thead>
+                <tbody>
+                    @foreach (var c in courses)
+                    {
+                        <tr>
+                            <td>@c</td>
+                            @foreach (var y in years)
+                            {
+                                var g = Model.CourseYears.FirstOrDefault(x => x.CourseName == c && x.YearOfStudy == y);
+                                <td class="right mono">@(g == null ? 0 : g.StudentCount)</td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card mb">
+    <div class="card-head"><div><h2>Tutor coverage</h2><p>Who covers which module and year</p></div></div>
+    <div class="table-wrap">
+        <table class="table">
+            <thead><tr><th>Module</th><th>Year</th><th>Tutor</th><th>Assigned by</th><th>Since</th></tr></thead>
+            <tbody>
+                @foreach (var a in Model.Coverage)
+                {
+                    <tr><td><span class="tag">@a.ModuleCode</span> @a.ModuleName</td><td>@a.YearOfStudy</td><td><div class="person">@Ui.Avatar(a.TutorName, "sm")@a.TutorName</div></td><td>@a.AssignedByName</td><td class="nowrap">@Ui.Date(a.AssignedAt)</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card mb">
+    <div class="card-head"><h2>Tutor activity</h2></div>
+    <div class="table-wrap">
+        <table class="table">
+            <thead><tr><th>Tutor</th><th class="right">Sessions</th><th class="right">Hours</th><th class="right">Tutorials</th><th class="right">Registers</th><th class="right">Announcements</th><th class="right">Paid out</th></tr></thead>
+            <tbody>
+                @foreach (var t in Model.TutorActivity)
+                {
+                    <tr><td><div class="person">@Ui.Avatar(t.TutorName, "sm")@t.TutorName</div></td><td class="right mono">@t.Sessions</td><td class="right mono">@t.Hours</td><td class="right mono">@t.Tutorials</td><td class="right mono">@t.Registers</td><td class="right mono">@t.Announcements</td><td class="right mono">@Ui.Money(t.PaidOut)</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @if (Model.TutorActivity.Count == 0) { <div class="empty"><p>No active tutors yet.</p></div> }
+</div>
+
+<div class="card">
+    <div class="table-tools" data-filter-table="#students">
+        <h2 style="margin-right:auto">Student directory</h2>
+        <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Search name, number or course" aria-label="Search students" /></div>
+    </div>
+    <div class="table-wrap">
+        <table class="table" id="students">
+            <thead><tr><th>Student</th><th>Number</th><th>Course</th><th>Year</th><th class="right">Modules</th><th class="right">Bookings</th><th>Attendance</th><th>Joined</th></tr></thead>
+            <tbody>
+                @foreach (var s in Model.Students)
+                {
+                    var name = s.FirstName + " " + s.LastName;
+                    <tr>
+                        <td><div class="person">@Ui.Avatar(name, "sm")<div><div>@name</div><div class="small muted">@s.Email</div></div></div></td>
+                        <td class="mono">@s.StudentNumber</td>
+                        <td>@s.CourseName</td>
+                        <td>@s.YearOfStudy</td>
+                        <td class="right mono">@s.ModuleCount</td>
+                        <td class="right mono">@s.BookingCount</td>
+                        <td><div class="rate" style="min-width:140px"><div class="progress @Ui.RateTone(s.AttendanceRate)"><span style="width:@(s.AttendanceRate.ToString(System.Globalization.CultureInfo.InvariantCulture))%"></span></div><b>@Ui.Percent(s.AttendanceRate)</b></div></td>
+                        <td class="nowrap">@Ui.Date(s.CreatedAt)</td>
+                    </tr>
+                }
+                <tr class="no-results"><td colspan="8"><div class="empty">No students match.</div></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script>
+        (function () {
+            if (!window.Chart) return;
+            var css = getComputedStyle(document.body);
+            var primary = css.getPropertyValue("--primary").trim(), accent = css.getPropertyValue("--primary-2").trim();
+            var text = css.getPropertyValue("--text-2").trim(), grid = css.getPropertyValue("--border").trim();
+            Chart.defaults.font.family = "Poppins, Segoe UI, sans-serif";
+            Chart.defaults.color = text;
+            var axes = { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: grid } } };
+
+            var money = document.getElementById("moneyChart");
+            if (money) new Chart(money, {
+                type: "bar",
+                data: { labels: @Html.Raw(moneyLabels), datasets: [
+                    { label: "Collected", data: @Html.Raw(moneyIn), backgroundColor: primary, borderRadius: 6 },
+                    { label: "Paid out", data: @Html.Raw(moneyOut), backgroundColor: accent + "88", borderRadius: 6 } ] },
+                options: { maintainAspectRatio: false, plugins: { legend: { position: "bottom" },
+                    tooltip: { callbacks: { label: function (c) { return c.dataset.label + ": R" + c.parsed.y.toLocaleString("en-ZA", { minimumFractionDigits: 2 }); } } } },
+                    scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: grid }, ticks: { callback: function (v) { return "R" + v.toLocaleString("en-ZA"); } } } } }
+            });
+            var bookingsC = document.getElementById("bookingChart");
+            if (bookingsC) new Chart(bookingsC, {
+                type: "doughnut",
+                data: { labels: @Html.Raw(statusLabels), datasets: [{ data: @Html.Raw(statusValues), backgroundColor: ["#15803D", primary, "#B45309", "#BE123C", "#7E819D", accent], borderWidth: 0 }] },
+                options: { maintainAspectRatio: false, cutout: "60%", plugins: { legend: { position: "bottom" } } }
+            });
+            new Chart(document.getElementById("trendChart"), {
+                type: "line",
+                data: { labels: @Html.Raw(trendLabels), datasets: [{ label: "New accounts", data: @Html.Raw(trendValues), borderColor: primary, backgroundColor: primary + "22", fill: true, tension: 0.35, pointRadius: 3 }] },
+                options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: axes }
+            });
+            new Chart(document.getElementById("roleChart"), {
+                type: "doughnut",
+                data: { labels: @Html.Raw(roleLabels), datasets: [{ data: @Html.Raw(roleValues), backgroundColor: [primary, accent, "#0E7490", "#B45309"], borderWidth: 0 }] },
+                options: { maintainAspectRatio: false, cutout: "62%", plugins: { legend: { position: "bottom" } } }
+            });
+            new Chart(document.getElementById("funnelChart"), {
+                type: "bar",
+                data: { labels: @Html.Raw(funnelLabels), datasets: [{ label: "Applications", data: @Html.Raw(funnelValues), backgroundColor: [accent, accent, "#15803D", "#BE123C", "#15803D", "#BE123C"], borderRadius: 6 }] },
+                options: { indexAxis: "y", maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: grid } }, y: { grid: { display: false } } } }
+            });
+        })();
+    </script>
+}

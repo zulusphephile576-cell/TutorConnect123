@@ -1,0 +1,33 @@
+﻿@model TutorApplication
+@{
+    ViewBag.Title = "Application: " + Model.FullName;
+    var canRecommend = Model.Status == "UnderReview" || Model.Status == "Recommended" || Model.Status == "NotRecommended";
+}
+<a class="back-link" href="@Url.Action("Applications")"><i class="fa-solid fa-arrow-left"></i>All applications</a>
+<div class="grid grid-aside">
+    <div>@Html.Partial("_ApplicationDetails", Model)
+        @Html.Partial("_ApplicationNotes", (List<ApplicationComment>)ViewBag.Notes, new ViewDataDictionary { { "NotesController", "Lecturer" }, { "ApplicationId", Model.ApplicationId }, { "CanWrite", true } })</div>
+    <div class="card" style="align-self:start">
+        <div class="card-head"><div><h2>Your recommendation</h2><p>The administrator decides.</p></div></div>
+        @if (canRecommend)
+        {
+            using (Html.BeginForm("Recommend", "Lecturer", new { id = Model.ApplicationId }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <div class="card-body stack" style="gap:14px">
+                    <fieldset class="segmented" style="grid-template-columns:1fr 1fr;border:1px solid var(--border)">
+                        <legend class="sr-only">Recommendation</legend>
+                        <label><input type="radio" name="recommendation" value="Approve" @(Model.LecturerRecommendation == "Approve" ? "checked" : null) required /><span>Approve</span></label>
+                        <label><input type="radio" name="recommendation" value="Reject" @(Model.LecturerRecommendation == "Reject" ? "checked" : null) /><span>Reject</span></label>
+                    </fieldset>
+                    <div class="field"><label for="comment">Comment for the administrator</label><textarea id="comment" name="comment" maxlength="1000" required>@Model.LecturerComment</textarea></div>
+                    <button type="submit" class="btn btn-primary btn-block">@(Model.LecturerRecommendation == null ? "Send recommendation" : "Update recommendation")</button>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="card-body"><p class="muted" style="margin:0">This application has been decided, so your recommendation can no longer change.</p></div>
+        }
+    </div>
+</div>

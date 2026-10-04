@@ -1,0 +1,74 @@
+﻿@{
+    ViewBag.Title = "Email";
+    var enabled = ViewBag.Enabled == true;
+    var hasPassword = ViewBag.HasPassword == true;
+    string user = ViewBag.User, lastError = ViewBag.LastError;
+    var userOk = !string.IsNullOrWhiteSpace(user) && user.Contains("@") && user != "your.address@gmail.com";
+    var problems = (ViewBag.Problems as List<string>) ?? new List<string>();
+}
+<div class="page-head">
+    <div><h1>Email</h1><p>TutorConnect emails applicants their decision and login details, new lecturers their accounts, and lecturers when an application needs review.</p></div>
+</div>
+
+@if (problems.Count > 0)
+{
+    <div class="alert alert-error">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <div class="alert-body">
+            <b>Email won't work until @(problems.Count == 1 ? "this is" : "these are") fixed in Web.config:</b>
+            <ol style="margin:8px 0 0;padding-left:18px">@foreach (var pr in problems) { <li>@pr</li> }</ol>
+            <div class="small" style="margin-top:8px">After saving Web.config the site restarts by itself; refresh this page to check again.</div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-success"><i class="fa-solid fa-circle-check"></i><div class="alert-body"><b>The settings look right.</b> Send a test email to confirm Gmail accepts them.</div></div>
+}
+
+<div class="grid grid-aside">
+    <div class="stack">
+        <div class="card">
+            <div class="card-head"><div><h2>Status</h2><p>Settings live in Web.config under appSettings.</p></div></div>
+            <ul class="list">
+                <li class="list-item"><span class="stat-icon @(enabled ? "success" : "danger")"><i class="fa-solid @(enabled ? "fa-check" : "fa-xmark")"></i></span>
+                    <div class="list-main"><div class="list-title">Sending is @(enabled ? "on" : "off")</div><div class="list-meta">Smtp:Enabled = @(enabled ? "true" : "false")@(enabled ? "" : ". Emails are saved to App_Data/emails.log instead of being sent.")</div></div></li>
+                <li class="list-item"><span class="stat-icon @(userOk ? "success" : "danger")"><i class="fa-solid @(userOk ? "fa-check" : "fa-xmark")"></i></span>
+                    <div class="list-main"><div class="list-title">Sending account</div><div class="list-meta">Smtp:User = @(string.IsNullOrWhiteSpace(user) ? "(not set)" : user)</div></div></li>
+                <li class="list-item"><span class="stat-icon @(hasPassword ? "success" : "danger")"><i class="fa-solid @(hasPassword ? "fa-check" : "fa-xmark")"></i></span>
+                    <div class="list-main"><div class="list-title">App password</div><div class="list-meta">Smtp:Pass is @(hasPassword ? "set" : "not set yet")</div></div></li>
+                <li class="list-item"><span class="stat-icon info"><i class="fa-solid fa-server"></i></span>
+                    <div class="list-main"><div class="list-title">Server</div><div class="list-meta">@ViewBag.Host, port @ViewBag.Port, from @ViewBag.From</div></div></li>
+            </ul>
+            @if (!string.IsNullOrEmpty(lastError))
+            {
+                <div class="card-foot"><div class="alert alert-error" style="margin:0"><i class="fa-solid fa-circle-exclamation"></i><div class="alert-body"><b>Last problem:</b> @lastError</div></div></div>
+            }
+        </div>
+
+        <div class="card">
+            <div class="card-head"><div><h2>Set up Gmail (about 5 minutes)</h2><p>Gmail needs an App Password; your normal password won't work.</p></div></div>
+            <div class="card-body">
+                <ol class="steps">
+                    <li>Sign in to the Gmail account the app should send from, and open <b>myaccount.google.com</b>, then <b>Security</b>.</li>
+                    <li>Turn on <b>2-Step Verification</b> if it isn't on yet.</li>
+                    <li>Search for <b>App passwords</b>, create one called "TutorConnect", and copy the 16 letters it shows.</li>
+                    <li>In Web.config set: <code>Smtp:Enabled</code> = <code>true</code>, <code>Smtp:User</code> and <code>Smtp:From</code> = your Gmail address, <code>Smtp:Pass</code> = the 16 letters (spaces are fine).</li>
+                    <li>Save Web.config, refresh this page, and send yourself a test below.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="align-self:start">
+        <div class="card-head"><div><h2>Send a test email</h2><p>Checks the whole setup end to end.</p></div></div>
+        @using (Html.BeginForm("SendTestEmail", "Admin", FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            <div class="card-body stack" style="gap:14px">
+                <div class="field"><label for="to">Send to</label><input type="email" id="to" name="to" required placeholder="you@example.com" value="@Session["Email"]" /></div>
+                <button type="submit" class="btn btn-primary btn-block"><i class="fa-regular fa-paper-plane"></i>Send test email</button>
+            </div>
+        }
+    </div>
+</div>

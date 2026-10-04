@@ -1,0 +1,15 @@
+﻿@model TutorConnect.Services.CourseCatalog
+@* Faculty -> department -> course filter for admin tables. Rows carry data-faculties / data-departments /
+   data-courses (comma lists); site.js narrows the department and course options as choices are made. *@
+<select id="cfFaculty" data-filter-attr="faculties" aria-label="Filter by faculty" class="cf-select">
+    <option value="">All faculties</option>
+    @foreach (var f in Model.Faculties) { <option value="@f.FacultyId">@f.Name.Replace("Faculty of ", "")</option> }
+</select>
+<select id="cfDepartment" data-filter-attr="departments" data-depends-on="#cfFaculty" aria-label="Filter by department" class="cf-select">
+    <option value="">All departments</option>
+    @foreach (var d in Model.Departments) { <option value="@d.DepartmentId" data-parent="@d.FacultyId">@d.Name</option> }
+</select>
+<select id="cfCourse" data-filter-attr="courses" data-depends-on="#cfDepartment" aria-label="Filter by course" class="cf-select">
+    <option value="">All courses</option>
+    @foreach (var c in Model.Courses.Where(x => x.DepartmentId.HasValue)) { <option value="@c.CourseId" data-parent="@c.DepartmentId">@c.Code, @c.Name</option> }
+</select>

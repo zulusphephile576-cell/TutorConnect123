@@ -1,0 +1,8 @@
+﻿@model List<TutorAssignment>
+@* Module/year picker options, value format "moduleId|year". *@
+<option value="">Choose a module and year</option>
+@foreach (var a in Model)
+{
+    var v = a.ModuleId + "|" + a.YearOfStudy;
+    <option value="@v" @(ViewData["Selected"] as string == v ? "selected" : null)>@a.ModuleCode, year @a.YearOfStudy (@a.StudentCount @(a.StudentCount == 1 ? "student" : "students"))</option>
+}

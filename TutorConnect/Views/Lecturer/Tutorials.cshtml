@@ -1,0 +1,31 @@
+﻿@model List<Tutorial>
+@{
+    ViewBag.Title = "Tutorials";
+}
+<div class="page-head"><div><h1>Tutorials</h1><p>Tutorials that tutors have scheduled on your modules, with attendance so far.</p></div></div>
+<div class="card">
+    <div class="table-tools" data-filter-table="#tuts">
+        <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Search title, module or tutor" aria-label="Search tutorials" /></div>
+    </div>
+    <div class="table-wrap">
+        <table class="table" id="tuts">
+            <thead><tr><th>Tutorial</th><th>Module</th><th>Tutor</th><th>When</th><th>Venue</th><th style="min-width:180px">Attendance</th></tr></thead>
+            <tbody>
+                @foreach (var t in Model)
+                {
+                    var pct = Ui.Pct(t.PresentCount + t.LateCount, t.EnrolledCount);
+                    <tr>
+                        <td>@t.Title @if (t.IsLive) { <span class="badge badge-success">Live</span> } else if (!t.IsPast) { <span class="badge badge-info">Upcoming</span> }</td>
+                        <td><span class="tag">@t.ModuleCode</span> <span class="small muted">Y@t.YearOfStudy</span></td>
+                        <td>@t.TutorName</td>
+                        <td class="nowrap">@Ui.TimeRange(t.StartTime, t.EndTime)</td>
+                        <td>@(t.Venue ?? "\u2013")</td>
+                        <td>@if (t.MarkedCount == 0) { <span class="muted small">Not marked</span> } else { <div class="rate"><div class="progress @Ui.RateTone(pct)"><span style="width:@(pct)%"></span></div><b>@(t.PresentCount + t.LateCount)/@t.EnrolledCount</b></div> }</td>
+                    </tr>
+                }
+                <tr class="no-results"><td colspan="6"><div class="empty">Nothing matches.</div></td></tr>
+            </tbody>
+        </table>
+    </div>
+    @if (Model.Count == 0) { <div class="empty"><i class="fa-solid fa-chalkboard"></i><p>No tutorials on your modules yet.</p></div> }
+</div>

@@ -1,0 +1,50 @@
+﻿@model Tutorial
+@{
+    ViewBag.Title = Model.Title;
+}
+<a class="back-link" href="@Url.Action("Tutorials")"><i class="fa-solid fa-arrow-left"></i>All tutorials</a>
+<div class="page-head">
+    <div><span class="tag">@Model.ModuleCode</span><h1 style="margin-top:8px">@Model.Title</h1><p>@Model.ModuleName, year @Model.YearOfStudy</p></div>
+</div>
+
+<div class="grid grid-aside">
+    <div class="card">
+        <div class="card-body">
+            <dl class="dl">
+                <dt>When</dt><dd>@Ui.Date(Model.StartTime), @Ui.Time(Model.StartTime) &ndash; @Ui.Time(Model.EndTime)</dd>
+                <dt>Venue</dt><dd>@(string.IsNullOrEmpty(Model.Venue) ? "To be confirmed" : Model.Venue)</dd>
+                <dt>Tutor</dt><dd><div class="person">@Ui.Avatar(Model.TutorName, "sm")@Model.TutorName</div></dd>
+                <dt>Class size</dt><dd>@Model.EnrolledCount students on the register</dd>
+            </dl>
+            @if (!string.IsNullOrWhiteSpace(Model.Description))
+            {
+                <h3 style="margin:22px 0 8px">About this tutorial</h3>
+                <p class="quote">@Model.Description</p>
+            }
+        </div>
+    </div>
+
+    <div class="card" style="align-self:start">
+        <div class="card-head"><h2>Your attendance</h2></div>
+        <div class="card-body">
+            @if (!string.IsNullOrEmpty(Model.MyStatus))
+            {
+                <p>@Ui.Badge(Model.MyStatus)</p>
+                <p class="small muted" style="margin:0">Recorded for this tutorial.</p>
+            }
+            else if (Model.IsLive)
+            {
+                <p>Check-in is open. Scan the QR code on your tutor's screen with your phone's camera.</p>
+                <p class="small muted" style="margin:0">Scanning the code marks you present straight away.</p>
+            }
+            else if (Model.IsPast)
+            {
+                <p class="muted" style="margin:0">No attendance was recorded for you.</p>
+            }
+            else
+            {
+                <p class="muted" style="margin:0">Check-in opens when the tutorial starts, at @Ui.Time(Model.StartTime).</p>
+            }
+        </div>
+    </div>
+</div>

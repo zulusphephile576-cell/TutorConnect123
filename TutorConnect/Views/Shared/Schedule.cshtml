@@ -1,0 +1,125 @@
+﻿@model ScheduleViewModel
+@{
+    ViewBag.Title = "Schedule";
+    var ci = System.Globalization.CultureInfo.InvariantCulture;
+    var first = Model.FirstHour;
+    var last = Model.LastHour;
+    foreach (var e in Model.Events)
+    {
+        if (e.Start.Hour < first) { first = e.Start.Hour; }
+        var endHour = e.End.Date > e.Start.Date ? 24 : (int)Math.Ceiling(e.End.TimeOfDay.TotalHours);
+        if (endHour > last) { last = Math.Min(24, endHour); }
+    }
+    const int hourPx = 56;
+    var days = Enumerable.Range(0, 7).Select(i => Model.WeekStart.AddDays(i)).ToList();
+    var prev = Model.WeekStart.AddDays(-7).ToString("yyyy-MM-dd", ci);
+    var next = Model.WeekStart.AddDays(7).ToString("yyyy-MM-dd", ci);
+    var isThisWeek = Model.WeekStart == ScheduleViewModel.MondayOf(TutorConnect.Helpers.Clock.Today);
+    var sessions = Model.Events.Count(e => e.Kind == "Session");
+    var tutorials = Model.Events.Count(e => e.Kind == "Tutorial");
+    var slots = Model.Events.Count(e => e.Kind == "Slot");
+    var hours = Model.Events.Where(e => e.Kind != "Slot").Sum(e => (e.End - e.Start).TotalHours);
+    var nowTop = (TutorConnect.Helpers.Clock.Now.TimeOfDay.TotalHours - first) * hourPx;
+}
+<div class="page-head">
+    <div>
+        <h1>@Model.WeekStart.ToString("d MMM", ci) to @Model.WeekStart.AddDays(6).ToString("d MMM yyyy", ci)</h1>
+        <p>
+            @sessions @(sessions == 1 ? "session" : "sessions"), @tutorials @(tutorials == 1 ? "tutorial" : "tutorials")@(Model.Role == "Tutor" ? ", " + slots + (slots == 1 ? " open slot" : " open slots") : "")
+            this week, @hours.ToString("0.#", ci) hours in total.
+        </p>
+    </div>
+    <div class="page-actions">
+        <div class="btn-group">
+            <a class="btn btn-secondary" href="@Url.Action("Schedule", new { week = prev })" aria-label="Previous week"><i class="fa-solid fa-chevron-left"></i></a>
+            <a class="btn btn-secondary @(isThisWeek ? "disabled" : null)" href="@Url.Action("Schedule")">This week</a>
+            <a class="btn btn-secondary" href="@Url.Action("Schedule", new { week = next })" aria-label="Next week"><i class="fa-solid fa-chevron-right"></i></a>
+        </div>
+        @if (Model.Role == "Tutor")
+        {
+            <a class="btn btn-primary" href="@Url.Action("Availability")"><i class="fa-solid fa-plus"></i>Add availability</a>
+        }
+        else
+        {
+            <a class="btn btn-primary" href="@Url.Action("FindTutor")"><i class="fa-solid fa-plus"></i>Book a session</a>
+        }
+    </div>
+</div>
+
+<div class="legend">
+    <span><i class="ev-swatch ev-session"></i>One-on-one session</span>
+    <span><i class="ev-swatch ev-tutorial"></i>Tutorial</span>
+    <span><i class="ev-swatch ev-holiday"></i>Public holiday</span>
+    @if (Model.Role == "Tutor") { <span><i class="ev-swatch ev-slot"></i>Open slot</span> }
+</div>
+
+<div class="card calendar">
+    <div class="cal-scroll">
+        <div class="cal-grid" style="--hour:@(hourPx)px; --hours:@(last - first)">
+            <div class="cal-corner"></div>
+            @foreach (var d in days)
+            {
+                var hol = Model.Holidays.FirstOrDefault(h => h.Date == d);
+                <div class="cal-dayhead @(d == TutorConnect.Helpers.Clock.Today ? "today" : null) @(hol != null ? "holiday" : null)">
+                    <span>@d.ToString("ddd", ci)</span><b>@d.Day</b>
+                    @if (hol != null) { <small class="cal-holiday" title="South African public holiday">@hol.Name</small> }
+                </div>
+            }
+            <div class="cal-times">
+                @for (var h = first; h < last; h++)
+                {
+                    <div class="cal-time"><span>@h.ToString("00"):00</span></div>
+                }
+            </div>
+            @foreach (var d in days)
+            {
+                <div class="cal-day @(d == TutorConnect.Helpers.Clock.Today ? "today" : null) @(Model.Holidays.Any(h => h.Date == d) ? "holiday" : null)">
+                    @if (d == TutorConnect.Helpers.Clock.Today && nowTop > 0 && nowTop < (last - first) * hourPx)
+                    {
+                        <div class="cal-now" style="top:@((int)nowTop)px"></div>
+                    }
+                    @foreach (var e in Model.Events.Where(x => x.Start.Date == d).OrderBy(x => x.Start))
+                    {
+                        var top = (e.Start.TimeOfDay.TotalHours - first) * hourPx;
+                        var endT = e.End.Date > e.Start.Date ? 24.0 : e.End.TimeOfDay.TotalHours;
+                        var height = Math.Max(26, (endT - e.Start.TimeOfDay.TotalHours) * hourPx - 3);
+                        <a class="ev ev-@e.Kind.ToLowerInvariant() @(e.Status == "Pending" ? "is-pending" : null)" href="@e.Url"
+                           style="top:@((int)top)px;height:@((int)height)px" title="@e.Title, @e.Start.ToString("HH:mm", ci) &ndash; @e.End.ToString("HH:mm", ci)">
+                            <span class="ev-time">@e.Start.ToString("HH:mm", ci) &ndash; @e.End.ToString("HH:mm", ci)</span>
+                            <span class="ev-title">@if (!string.IsNullOrEmpty(e.Code)) { <b>@e.Code</b> }@e.Title</span>
+                            @if (height > 60 && !string.IsNullOrEmpty(e.Subtitle)) { <span class="ev-sub">@e.Subtitle</span> }
+                            @if (e.Status == "Pending") { <span class="ev-sub">Waiting for approval</span> }
+                        </a>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="agenda">
+    @foreach (var d in days)
+    {
+        var dayEvents = Model.Events.Where(x => x.Start.Date == d).OrderBy(x => x.Start).ToList();
+        <div class="card agenda-day">
+            <div class="card-head"><h2>@d.ToString("dddd d MMMM", ci)</h2>@if (d == TutorConnect.Helpers.Clock.Today) { <span class="badge badge-info">Today</span> }@foreach (var h in Model.Holidays.Where(x => x.Date == d)) { <span class="badge badge-warning">@h.Name</span> }</div>
+            @if (dayEvents.Count == 0)
+            {
+                <div class="empty" style="padding:14px"><p style="margin:0">Nothing scheduled.</p></div>
+            }
+            else
+            {
+                <ul class="list">
+                    @foreach (var e in dayEvents)
+                    {
+                        <li class="list-item">
+                            <span class="ev-swatch ev-@e.Kind.ToLowerInvariant()"></span>
+                            <div class="list-main"><div class="list-title"><a href="@e.Url">@e.Title</a></div><div class="list-meta">@e.Start.ToString("HH:mm", ci) &ndash; @e.End.ToString("HH:mm", ci)@(string.IsNullOrEmpty(e.Code) ? "" : ", " + e.Code)</div></div>
+                            @if (e.Status != null) { @Ui.Badge(e.Status) }
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    }
+</div>

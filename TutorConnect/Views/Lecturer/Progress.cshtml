@@ -1,0 +1,64 @@
+﻿@model List<StudentProgress>
+@{
+    ViewBag.Title = "Progress";
+    var tutors = (List<TutorActivity>)ViewBag.Tutors;
+    var atRisk = Model.Count(p => p.Total > 0 && p.Rate < 50);
+    var modules = Model.Select(p => p.ModuleCode).Distinct().OrderBy(c => c).ToList();
+}
+<div class="page-head">
+    <div><h1>Progress</h1><p>Tutorial and class-register attendance per student and module, and what each tutor has been doing on your modules.</p></div>
+</div>
+
+@if (atRisk > 0)
+{
+    <div class="alert alert-warning"><i class="fa-solid fa-triangle-exclamation"></i><div class="alert-body">@atRisk student-module @(atRisk == 1 ? "record is" : "records are") below 50% attendance. They're listed first within each module.</div></div>
+}
+
+<div class="card mb">
+    <div class="card-head"><h2>Students</h2></div>
+    <div class="table-tools" data-filter-table="#progress">
+        <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Search student" aria-label="Search students" /></div>
+        <select data-filter-attr="module" aria-label="Filter by module" style="width:auto"><option value="">All modules</option>@foreach (var m in modules) { <option>@m</option> }</select>
+    </div>
+    <div class="table-wrap">
+        <table class="table" id="progress">
+            <thead><tr><th>Student</th><th>Module</th><th>Present</th><th>Absent</th><th style="min-width:200px">Rate</th></tr></thead>
+            <tbody>
+                @foreach (var p in Model)
+                {
+                    var r = (int)Math.Round(p.Rate);
+                    <tr data-module="@p.ModuleCode">
+                        <td><div>@p.StudentName</div><div class="small muted">@p.StudentNumber, year @p.YearOfStudy</div></td>
+                        <td><span class="tag">@p.ModuleCode</span></td>
+                        <td>@p.Present</td><td>@p.Absent</td>
+                        <td>@if (p.Total == 0) { <span class="muted small">No records yet</span> } else { <div class="rate"><div class="progress @Ui.RateTone(p.Rate)"><span style="width:@(r)%"></span></div><b>@r%</b></div> }</td>
+                    </tr>
+                }
+                <tr class="no-results"><td colspan="6"><div class="empty">Nothing matches.</div></td></tr>
+            </tbody>
+        </table>
+    </div>
+    @if (Model.Count == 0) { <div class="empty"><p>No students are registered for your modules yet.</p></div> }
+</div>
+
+<div class="card">
+    <div class="card-head"><h2>Tutor activity on your modules</h2></div>
+    @if (tutors.Count == 0)
+    {
+        <div class="empty"><p>No tutors are assigned to your modules yet.</p></div>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Tutor</th><th>Sessions</th><th>Hours completed</th><th>Tutorials</th><th>Class registers</th><th>Announcements</th></tr></thead>
+                <tbody>
+                    @foreach (var t in tutors)
+                    {
+                        <tr><td><div class="person">@Ui.Avatar(t.TutorName, "sm")@t.TutorName</div></td><td>@t.Sessions</td><td>@t.Hours</td><td>@t.Tutorials</td><td>@t.Registers</td><td>@t.Announcements</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

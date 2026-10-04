@@ -1,0 +1,65 @@
+﻿@model DashboardViewModel
+@{
+    ViewBag.Title = "Dashboard";
+}
+<div class="page-head">
+    <div><h1>Administration</h1><p>The whole platform at a glance.</p></div>
+    <div class="page-actions">
+        <a class="btn btn-secondary" href="@Url.Action("CreateLecturer")"><i class="fa-solid fa-user-plus"></i>Add lecturer</a>
+        <a class="btn btn-primary" href="@Url.Action("CreateCourse")"><i class="fa-solid fa-plus"></i>New course</a>
+    </div>
+</div>
+
+<div class="stats mb">
+    <a class="stat" href="@Url.Action("Users", new { role = "Student" })" style="color:inherit;text-decoration:none"><div class="stat-top">Students<span class="stat-icon"><i class="fa-solid fa-user-graduate"></i></span></div><div class="stat-value">@Model.Stat("Students")</div></a>
+    <a class="stat" href="@Url.Action("Users", new { role = "Tutor" })" style="color:inherit;text-decoration:none"><div class="stat-top">Tutors<span class="stat-icon info"><i class="fa-solid fa-chalkboard-user"></i></span></div><div class="stat-value">@Model.Stat("Tutors")</div></a>
+    <a class="stat" href="@Url.Action("Users", new { role = "Lecturer" })" style="color:inherit;text-decoration:none"><div class="stat-top">Lecturers<span class="stat-icon success"><i class="fa-solid fa-user-tie"></i></span></div><div class="stat-value">@Model.Stat("Lecturers")</div></a>
+    <a class="stat" href="@Url.Action("Courses")" style="color:inherit;text-decoration:none"><div class="stat-top">Courses and modules<span class="stat-icon warning"><i class="fa-solid fa-graduation-cap"></i></span></div><div class="stat-value">@Model.Stat("Courses") <span class="muted" style="font-size:1rem">/ @Model.Stat("Modules")</span></div></a>
+</div>
+<div class="stats mb">
+    <a class="stat feature" href="@Url.Action("Applications", new { status = "open" })" style="color:inherit;text-decoration:none"><div class="stat-top">Open applications<span class="stat-icon warning"><i class="fa-solid fa-file-signature"></i></span></div><div class="stat-value">@Model.Stat("OpenApplications")</div></a>
+    <div class="stat"><div class="stat-top">Bookings<span class="stat-icon"><i class="fa-solid fa-calendar-check"></i></span></div><div class="stat-value">@Model.Stat("Bookings")</div></div>
+    <a class="stat" href="@Url.Action("Transactions")" style="color:inherit;text-decoration:none"><div class="stat-top">Revenue collected<span class="stat-icon success"><i class="fa-solid fa-sack-dollar"></i></span></div><div class="stat-value">@Ui.Money(Model.StatDecimal("Revenue"))</div></a>
+    <a class="stat" href="@Url.Action("Transactions")" style="color:inherit;text-decoration:none"><div class="stat-top">Payouts not sent<span class="stat-icon @(Model.Stat("PayoutsNotSent") > 0 ? "danger" : "success")"><i class="fa-solid fa-money-bill-transfer"></i></span></div><div class="stat-value">@Model.Stat("PayoutsNotSent")</div><div class="stat-note">Usually tutors without bank details</div></a>
+</div>
+
+<div class="grid grid-main">
+    <div class="card">
+        <div class="card-head"><h2>Recent activity</h2></div>
+        @if (Model.Activity.Count == 0)
+        {
+            <div class="empty"><p>Nothing yet.</p></div>
+        }
+        else
+        {
+            <ul class="list">
+                @foreach (var a in Model.Activity)
+                {
+                    <li class="list-item">
+                        @Ui.Avatar(a.UserName ?? "?", "sm")
+                        <div class="list-main"><div class="small">@a.Message</div><div class="list-meta">@(a.UserName ?? "System")@(a.Role == null ? "" : ", " + a.Role), @Ui.Ago(a.CreatedAt)</div></div>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+    <div class="card" style="align-self:start">
+        <div class="card-head"><h2>Applications in progress</h2><a href="@Url.Action("Applications", new { status = "open" })">All</a></div>
+        @if (Model.Applications.Count == 0)
+        {
+            <div class="empty"><p>No open applications.</p></div>
+        }
+        else
+        {
+            <ul class="list">
+                @foreach (var a in Model.Applications)
+                {
+                    <li class="list-item">
+                        <div class="list-main"><div class="list-title"><a href="@Url.Action("Application", new { id = a.ApplicationId })">@a.FullName</a></div><div class="list-meta"><span class="tag">@a.ModuleCode</span> @Ui.Ago(a.SubmittedAt)</div></div>
+                        @Ui.Badge(a.Status)
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>

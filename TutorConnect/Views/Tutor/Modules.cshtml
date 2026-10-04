@@ -1,0 +1,46 @@
+﻿@model List<ModuleOverview>
+@{
+    ViewBag.Title = "My modules";
+}
+<div class="page-head">
+    <div><h1>My modules</h1><p>The modules and years you've been assigned to tutor.</p></div>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="card"><div class="empty"><i class="fa-solid fa-book"></i><p>You haven't been assigned to a module yet. A lecturer assigns tutors to their modules; you'll get a notification when it happens.</p></div></div>
+}
+<div class="module-cards">
+    @foreach (var m in Model)
+    {
+        <div class="card module-card">
+            <div class="card-head">
+                <div>
+                    <h2><span class="tag">@m.Code</span> @m.Name</h2>
+                    <p>Year @m.YearOfStudy students <span class="sem-chip sem-@m.Semester" style="margin-left:6px">Semester @m.Semester</span></p>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="mini-stats">
+                    <div><b>@m.StudentCount</b><span>@(m.StudentCount == 1 ? "student" : "students")</span></div>
+                    <div><b>@m.UpcomingSessions</b><span>upcoming @(m.UpcomingSessions == 1 ? "session" : "sessions")</span></div>
+                    <div><b>@m.UpcomingTutorials</b><span>upcoming @(m.UpcomingTutorials == 1 ? "tutorial" : "tutorials")</span></div>
+                    <div><b>@m.ContentCount</b><span>@(m.ContentCount == 1 ? "file" : "files")</span></div>
+                </div>
+                <dl class="dl" style="grid-template-columns:120px 1fr;margin-top:14px">
+                    <dt>Lecturer</dt><dd>@(m.LecturerName ?? "Not assigned yet")@if (m.LecturerEmail != null) { <span class="muted small"> (<a href="mailto:@m.LecturerEmail">@m.LecturerEmail</a>)</span> }</dd>
+                    <dt>Other tutors</dt><dd>@(string.IsNullOrEmpty(m.OtherTutors) ? "Just you" : m.OtherTutors)</dd>
+                    <dt>Sessions done</dt><dd>@m.CompletedSessions</dd>
+                    @if (m.AssignedAt.HasValue) { <dt>Assigned</dt><dd>@Ui.Date(m.AssignedAt.Value)</dd> }
+                </dl>
+                @if (!string.IsNullOrWhiteSpace(m.Description)) { <p class="small text-2" style="margin:12px 0 0">@m.Description</p> }
+            </div>
+            <div class="card-foot module-actions">
+                <a class="btn btn-primary btn-sm" href="@Url.Action("Tutorials")"><i class="fa-solid fa-plus"></i>Tutorial</a>
+                <a class="btn btn-secondary btn-sm" href="@Url.Action("Availability")"><i class="fa-regular fa-clock"></i>Availability (@m.OpenSlots open)</a>
+                <a class="btn btn-ghost btn-sm" href="@Url.Action("Content")"><i class="fa-solid fa-folder-open"></i>Content</a>
+                <a class="btn btn-ghost btn-sm" href="@Url.Action("Announcements")"><i class="fa-solid fa-bullhorn"></i>Announce</a>
+            </div>
+        </div>
+    }
+</div>

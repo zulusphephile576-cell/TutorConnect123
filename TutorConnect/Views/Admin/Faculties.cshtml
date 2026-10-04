@@ -1,0 +1,97 @@
+﻿@model List<TutorConnect.Models.Faculty>
+@{
+    ViewBag.Title = "Faculties and departments";
+    var departments = (ViewBag.Departments as List<Department>) ?? new List<Department>();
+}
+<a class="back-link" href="@Url.Action("Courses")"><i class="fa-solid fa-arrow-left"></i>Courses</a>
+<div class="page-head">
+    <div><h1>Faculties and departments</h1><p>Courses sit inside a department, and departments inside a faculty. Students choose them in this order when they register.</p></div>
+</div>
+
+<div class="grid grid-aside">
+    <div class="stack" id="facultyList">
+        @if (Model.Count > 0)
+        {
+            <div class="card" data-filter-table="#facultyList">
+                <div class="table-tools" style="border-bottom:0">
+                    <div class="search" style="max-width:none"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Search faculties or departments, e.g. Nursing" aria-label="Search faculties and departments" /></div>
+                    <span class="muted small"><span data-filter-count>@Model.Count of @Model.Count</span> faculties</span>
+                </div>
+            </div>
+            <div class="card no-results"><div class="empty"><i class="fa-solid fa-magnifying-glass"></i><p>No faculty or department matches that search.</p></div></div>
+        }
+        @if (Model.Count == 0)
+        {
+            <div class="card"><div class="empty"><i class="fa-solid fa-building-columns"></i><p>No faculties yet. Add the first one.</p></div></div>
+        }
+        @foreach (var f in Model)
+        {
+            var mine = departments.Where(d => d.FacultyId == f.FacultyId).ToList();
+            <div class="card" data-filter-item>
+                <div class="card-head">
+                    <div><h2>@f.Name</h2><p>@f.DepartmentCount @(f.DepartmentCount == 1 ? "department" : "departments"), @f.CourseCount @(f.CourseCount == 1 ? "course" : "courses")</p></div>
+                    <details class="drawer">
+                        <summary class="btn btn-ghost btn-sm"><i class="fa-regular fa-pen-to-square"></i>Rename</summary>
+                        @using (Html.BeginForm("SaveFaculty", "Admin", FormMethod.Post, new { @class = "inline-form", style = "margin-top:8px" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="facultyId" value="@f.FacultyId" />
+                            <div class="field"><label class="sr-only" for="fname-@f.FacultyId">Faculty name</label><input type="text" id="fname-@f.FacultyId" name="name" value="@f.Name" maxlength="120" required /></div>
+                            <button type="submit" class="btn btn-secondary btn-sm">Save</button>
+                        }
+                    </details>
+                </div>
+                @if (mine.Count == 0)
+                {
+                    <div class="empty" style="padding:18px"><p style="margin:0">No departments yet.</p></div>
+                }
+                else
+                {
+                    <ul class="list">
+                        @foreach (var d in mine)
+                        {
+                            <li class="list-item">
+                                <span class="stat-icon"><i class="fa-solid fa-sitemap"></i></span>
+                                <div class="list-main"><div class="list-title">@d.Name</div><div class="list-meta">@d.CourseCount @(d.CourseCount == 1 ? "course" : "courses")</div></div>
+                                @using (Html.BeginForm("DeleteDepartment", "Admin", new { id = d.DepartmentId }, FormMethod.Post, new { data_confirm = "Remove the " + d.Name + " department?" }))
+                                {
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-ghost btn-sm" @(d.CourseCount > 0 ? Html.Raw("disabled title=\"Move its courses first\"") : null) aria-label="Remove @d.Name"><i class="fa-regular fa-trash-can"></i></button>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+                <div class="card-foot spread">
+                    @using (Html.BeginForm("SaveDepartment", "Admin", FormMethod.Post, new { @class = "inline-form", style = "flex:1" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="facultyId" value="@f.FacultyId" />
+                        <div class="field"><label class="sr-only" for="dnew-@f.FacultyId">New department</label><input type="text" id="dnew-@f.FacultyId" name="name" maxlength="120" placeholder="Add a department to this faculty" required /></div>
+                        <button type="submit" class="btn btn-secondary"><i class="fa-solid fa-plus"></i>Add</button>
+                    }
+                    @if (f.DepartmentCount == 0)
+                    {
+                        using (Html.BeginForm("DeleteFaculty", "Admin", new { id = f.FacultyId }, FormMethod.Post, new { data_confirm = "Remove " + f.Name + "?" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-ghost btn-sm">Remove faculty</button>
+                        }
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="card" style="align-self:start">
+        <div class="card-head"><div><h2>Add a faculty</h2><p>Then add its departments on the left.</p></div></div>
+        @using (Html.BeginForm("SaveFaculty", "Admin", FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            <div class="card-body stack" style="gap:14px">
+                <div class="field"><label for="newFaculty">Faculty name</label><input type="text" id="newFaculty" name="name" maxlength="120" placeholder="e.g. Faculty of Applied Sciences" required /></div>
+                <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-plus"></i>Add faculty</button>
+            </div>
+        }
+    </div>
+</div>

@@ -1,0 +1,61 @@
+﻿@model System.Data.DataTable
+@* Renders any result set as a searchable table: rand amounts, SAST dates and percentages are formatted automatically. *@
+@{
+    var ci = System.Globalization.CultureInfo.InvariantCulture;
+    var title = ViewData["Title"] as string;
+    var subtitle = ViewData["Subtitle"] as string;
+    var anchor = ViewData["Anchor"] as string;
+    var hidden = ((ViewData["Hide"] as string) ?? "").Split(',');
+    var cols = Model == null ? new List<System.Data.DataColumn>() : Model.Columns.Cast<System.Data.DataColumn>().Where(c => !hidden.Contains(c.ColumnName) && !c.ColumnName.EndsWith("Id")).ToList();
+    var tableId = "dt-" + (anchor ?? Guid.NewGuid().ToString("N"));
+    Func<string, string> label = k =>
+    {
+        var spaced = System.Text.RegularExpressions.Regex.Replace(k, "([a-z])([A-Z])", "$1 $2");
+        return char.ToUpperInvariant(spaced[0]) + spaced.Substring(1).ToLowerInvariant();
+    };
+    Func<string, bool> isMoney = n => n.Contains("Amount") || n.Contains("Revenue") || n.Contains("Paid") || n.Contains("Collected") || n.Contains("Earn") || n.Contains("Outstanding");
+    Func<System.Data.DataColumn, bool> isNumber = c => c.DataType == typeof(int) || c.DataType == typeof(long) || c.DataType == typeof(decimal) || c.DataType == typeof(double);
+}
+<div class="card mb" id="@anchor">
+    <div class="card-head">
+        <div><h2>@title</h2>@if (!string.IsNullOrEmpty(subtitle)) { <p>@subtitle</p> }</div>
+        <span class="muted small">@(Model == null ? 0 : Model.Rows.Count) @((Model != null && Model.Rows.Count == 1) ? "row" : "rows")</span>
+    </div>
+    @if (Model == null || Model.Rows.Count == 0)
+    {
+        <div class="empty" style="padding:18px"><p style="margin:0">No data yet.</p></div>
+    }
+    else
+    {
+        if (Model.Rows.Count > 8)
+        {
+            <div class="table-tools" data-filter-table="#@tableId">
+                <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Search this table" aria-label="Search @title" /></div>
+            </div>
+        }
+        <div class="table-wrap" style="max-height:480px;overflow-y:auto">
+            <table class="table" id="@tableId">
+                <thead><tr>@foreach (var c in cols) { <th class="@(isNumber(c) ? "right" : null)">@label(c.ColumnName)</th> }</tr></thead>
+                <tbody>
+                    @foreach (System.Data.DataRow r in Model.Rows)
+                    {
+                        <tr>
+                            @foreach (var c in cols)
+                            {
+                                var v = r[c];
+                                if (v == DBNull.Value) { <td class="@(isNumber(c) ? "right" : null) muted">–</td> }
+                                else if (isMoney(c.ColumnName) && (v is decimal || v is double)) { <td class="right mono">@Ui.Money(Convert.ToDecimal(v))</td> }
+                                else if (v is DateTime) { <td class="nowrap">@(((DateTime)v).ToString("d MMM yyyy, HH:mm", ci))</td> }
+                                else if ((c.ColumnName.Contains("Rate") || c.ColumnName.Contains("Percent")) && (v is decimal || v is double)) { <td class="right mono">@Ui.Percent(Convert.ToDecimal(v))</td> }
+                                else if (isNumber(c)) { <td class="right mono">@Convert.ToString(v, ci)</td> }
+                                else if (c.ColumnName == "Status" || c.ColumnName == "Label" && (ViewData["BadgeLabels"] as string) == "yes") { <td>@Ui.Badge(Convert.ToString(v))</td> }
+                                else { <td>@Convert.ToString(v, ci)</td> }
+                            }
+                        </tr>
+                    }
+                    <tr class="no-results"><td colspan="@cols.Count"><div class="empty">Nothing matches.</div></td></tr>
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

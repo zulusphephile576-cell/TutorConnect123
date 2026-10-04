@@ -1,0 +1,67 @@
+﻿@model TutorApplication
+@{
+    ViewBag.Title = "Application: " + Model.FullName;
+    var lecturers = (List<TutorConnect.Models.User>)ViewBag.Lecturers;
+}
+<a class="back-link" href="@Url.Action("Applications")"><i class="fa-solid fa-arrow-left"></i>All applications</a>
+<div class="grid grid-aside">
+    <div>@Html.Partial("_ApplicationDetails", Model)
+        @Html.Partial("_ApplicationNotes", (List<ApplicationComment>)ViewBag.Notes, new ViewDataDictionary { { "NotesController", "Admin" }, { "ApplicationId", Model.ApplicationId }, { "CanWrite", Model.AssignedLecturerId.HasValue } })</div>
+    <div class="stack" style="align-self:start">
+        @if (Model.IsDecided)
+        {
+            <div class="card">
+                <div class="card-head"><div><h2>Decision email</h2><p>@Model.Status. Send the email again if the applicant didn't receive it.</p></div></div>
+                @using (Html.BeginForm("ResendDecision", "Admin", new { id = Model.ApplicationId }, FormMethod.Post, new { data_confirm = Model.Status == "Approved" ? "Send the approval email again? A new temporary password will be issued and the old one stops working." : "Send the decision email again?" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="card-body stack" style="gap:10px">
+                        <div class="small muted">To: <b>@Model.PersonalEmail</b></div>
+                        <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-paper-plane"></i>Resend decision email</button>
+                        <a class="small" href="@Url.Action("Email", "Admin")">Check the email settings</a>
+                    </div>
+                }
+            </div>
+        }
+        @if (!Model.IsDecided)
+        {
+            <div class="card">
+                <div class="card-head"><div><h2>1. Lecturer review</h2><p>@(Model.AssignedLecturerId.HasValue ? "Reassigning clears any recommendation." : "Choose who should review this.")</p></div></div>
+                @using (Html.BeginForm("AssignLecturer", "Admin", new { id = Model.ApplicationId }, FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="card-body stack" style="gap:12px">
+                        <div class="field">
+                            <label for="lecturerId">Lecturer</label>
+                            <select id="lecturerId" name="lecturerId" required>
+                                <option value="">Choose a lecturer</option>
+                                @foreach (var l in lecturers) { <option value="@l.UserId" @(Model.AssignedLecturerId == l.UserId ? "selected" : null)>@l.FullName</option> }
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-secondary btn-block">@(Model.AssignedLecturerId.HasValue ? "Reassign" : "Assign for review")</button>
+                    </div>
+                }
+            </div>
+
+            <div class="card">
+                <div class="card-head"><div><h2>2. Decision</h2><p>@(Model.LecturerRecommendation == null ? "You can decide without a recommendation, but one is advised." : "The lecturer has made a recommendation.")</p></div></div>
+                @using (Html.BeginForm("Decide", "Admin", new { id = Model.ApplicationId }, FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="card-body stack" style="gap:12px">
+                        <div class="field"><label for="feedback">Feedback to the applicant</label><textarea id="feedback" name="feedback" maxlength="1000" placeholder="Required when rejecting"></textarea></div>
+                        <div class="row">
+                            <button type="submit" name="decision" value="Approve" class="btn btn-success" style="flex:1" data-confirm-approve>Approve</button>
+                            <button type="submit" name="decision" value="Reject" class="btn btn-danger" style="flex:1">Reject</button>
+                        </div>
+                        <p class="small muted" style="margin:0">Approving creates a tutor account (or reactivates an existing one) and emails login details to @Model.PersonalEmail.</p>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="card"><div class="card-body"><p style="margin:0">This application was <strong>@Model.Status.ToLowerInvariant()</strong>@(Model.DecidedAt.HasValue ? " on " + Ui.Date(Model.DecidedAt.Value) : "").</p></div></div>
+        }
+    </div>
+</div>

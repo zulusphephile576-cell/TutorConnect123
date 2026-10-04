@@ -1,0 +1,172 @@
+﻿@model DashboardViewModel
+@{
+    ViewBag.Title = "Dashboard";
+    var first = (Session["FirstName"] as string) ?? "";
+    var hasBanking = (bool)ViewBag.HasBanking;
+}
+<div class="card hero mb">
+    <div class="hero-inner">
+        <div>
+            <h1>Hi @first</h1>
+            <p style="margin:6px 0 0">
+                @if (Model.TodaySessions.Count == 0) { <text>No sessions today.</text> } else { <text>You have @Model.TodaySessions.Count @(Model.TodaySessions.Count == 1 ? "session" : "sessions") today.</text> }
+                @if (Model.PendingRequests.Count > 0) { <text> @Model.PendingRequests.Count @(Model.PendingRequests.Count == 1 ? "request is" : "requests are") waiting for you.</text> }
+            </p>
+        </div>
+        <div class="hero-actions">
+            <a class="btn btn-white" href="@Url.Action("Availability")"><i class="fa-solid fa-plus"></i>Add availability</a>
+            <a class="btn btn-light" href="@Url.Action("Tutorials")">New tutorial</a>
+            <a class="btn btn-light" href="@Url.Action("Announcements")">Announce</a>
+        </div>
+    </div>
+</div>
+
+@if (!hasBanking)
+{
+    <div class="alert alert-warning">
+        <i class="fa-solid fa-building-columns"></i>
+        <div class="alert-body"><strong>Add your banking details to get paid.</strong> Payouts for paid sessions are held until you do, then sent automatically. <a href="@Url.Action("Banking")">Add banking details</a></div>
+    </div>
+}
+
+<div class="stats mb">
+    <div class="stat feature"><div class="stat-top">Pending requests<span class="stat-icon warning"><i class="fa-solid fa-inbox"></i></span></div><div class="stat-value">@Model.Stat("PendingRequests")</div></div>
+    <div class="stat"><div class="stat-top">Upcoming confirmed<span class="stat-icon"><i class="fa-solid fa-calendar-check"></i></span></div><div class="stat-value">@Model.Stat("UpcomingSessions")</div></div>
+    <div class="stat"><div class="stat-top">Open slots<span class="stat-icon info"><i class="fa-regular fa-clock"></i></span></div><div class="stat-value">@Model.Stat("OpenSlots")</div></div>
+    <div class="stat"><div class="stat-top">Hours tutored<span class="stat-icon success"><i class="fa-solid fa-hourglass-half"></i></span></div><div class="stat-value">@Model.Stat("HoursTutored")</div><div class="stat-note">@Model.Stat("ModuleCount") module assignments</div></div>
+</div>
+
+<div class="grid grid-main">
+    <div class="stack">
+        @if (Model.PendingRequests.Count > 0)
+        {
+            <div class="card">
+                <div class="card-head"><div><h2>Needs your answer</h2><p>Students have already paid for these.</p></div><a href="@Url.Action("Sessions")">All sessions</a></div>
+                <ul class="list">
+                    @foreach (var b in Model.PendingRequests)
+                    {
+                        <li class="list-item">
+                            @Ui.Avatar(b.StudentName)
+                            <div class="list-main">
+                                <div class="list-title">@b.StudentName <span class="tag">@b.ModuleCode</span></div>
+                                <div class="list-meta">@Ui.TimeRange(b.StartTime, b.EndTime), @Ui.Money(b.Amount)</div>
+                            </div>
+                            <div class="row">
+                                @using (Html.BeginForm("SetBookingStatus", "Tutor", new { id = b.BookingId, status = "Confirmed" }, FormMethod.Post))
+                                {
+                                    @Html.AntiForgeryToken()<button type="submit" class="btn btn-success btn-sm">Approve</button>
+                                }
+                                @using (Html.BeginForm("SetBookingStatus", "Tutor", new { id = b.BookingId, status = "Declined" }, FormMethod.Post, new { data_confirm = "Decline this request? The slot will open again." }))
+                                {
+                                    @Html.AntiForgeryToken()<button type="submit" class="btn btn-danger btn-sm">Decline</button>
+                                }
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+
+        <div class="card">
+            <div class="card-head"><h2>Today</h2><span class="muted small">@Ui.Date(TutorConnect.Helpers.Clock.Today)</span></div>
+            @if (Model.TodaySessions.Count == 0)
+            {
+                <div class="empty"><i class="fa-regular fa-sun"></i><p>Nothing scheduled for today.</p></div>
+            }
+            else
+            {
+                <ul class="list">
+                    @foreach (var b in Model.TodaySessions)
+                    {
+                        <li class="list-item">
+                            <div class="date-tile"><b>@Ui.Time(b.StartTime)</b><span>@b.Hours h</span></div>
+                            <div class="list-main"><div class="list-title">@b.StudentName</div><div class="list-meta"><span class="tag">@b.ModuleCode</span> @b.ModuleName</div></div>
+                            @Ui.Badge(b.Status)
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+
+        <div class="card">
+            <div class="card-head"><h2>Coming up</h2><a href="@Url.Action("Sessions")">All sessions</a></div>
+            @if (Model.Sessions.Count == 0)
+            {
+                <div class="empty"><p>No sessions after today yet.</p></div>
+            }
+            else
+            {
+                <ul class="list">
+                    @foreach (var b in Model.Sessions)
+                    {
+                        <li class="list-item">
+                            <div class="date-tile"><b>@b.StartTime.Day</b><span>@b.StartTime.ToString("MMM")</span></div>
+                            <div class="list-main"><div class="list-title">@b.StudentName <span class="tag">@b.ModuleCode</span></div><div class="list-meta">@Ui.TimeRange(b.StartTime, b.EndTime)</div></div>
+                            @Ui.Badge(b.Status)
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+
+    <div class="stack">
+        <div class="card">
+            <div class="card-head"><h2>Your tutorials</h2><a href="@Url.Action("Tutorials")">Manage</a></div>
+            @if (Model.Tutorials.Count == 0)
+            {
+                <div class="empty"><p>No upcoming tutorials.</p><a class="btn btn-secondary btn-sm" href="@Url.Action("Tutorials")">Create one</a></div>
+            }
+            else
+            {
+                <ul class="list">
+                    @foreach (var t in Model.Tutorials)
+                    {
+                        <li class="list-item">
+                            <div class="list-main">
+                                <div class="list-title"><a href="@Url.Action("Register", new { id = t.TutorialId })">@t.Title</a></div>
+                                <div class="list-meta"><span class="tag">@t.ModuleCode</span> @Ui.DateTime(t.StartTime)</div>
+                            </div>
+                            @if (t.IsLive) { <a class="btn btn-primary btn-sm" href="@Url.Action("QrCode", new { id = t.TutorialId })"><i class="fa-solid fa-qrcode"></i>QR</a> }
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+
+        <div class="card">
+            <div class="card-head"><div><h2>New from lecturers</h2><p>Content waiting for your review</p></div></div>
+            @if (Model.NewContent.Count == 0)
+            {
+                <div class="empty"><p>You're all caught up.</p></div>
+            }
+            else
+            {
+                <ul class="list">
+                    @foreach (var c in Model.NewContent)
+                    {
+                        <li class="list-item"><i class="fa-regular fa-file-lines muted"></i><div class="list-main"><div class="list-title">@c.Title</div><div class="list-meta"><span class="tag">@c.ModuleCode</span> @c.UploaderName, @Ui.Ago(c.UploadedAt)</div></div></li>
+                    }
+                </ul>
+                <div class="card-foot"><a href="@Url.Action("Content")">Review content</a></div>
+            }
+        </div>
+
+        <div class="card">
+            <div class="card-head"><h2>Notifications</h2></div>
+            @if (Model.Activity.Count == 0)
+            {
+                <div class="empty"><p>Nothing new.</p></div>
+            }
+            else
+            {
+                <ul class="list">
+                    @foreach (var a in Model.Activity)
+                    {
+                        <li class="list-item"><span class="feed-dot"></span><div class="list-main"><div class="small">@a.Message</div><div class="list-meta">@Ui.Ago(a.CreatedAt)</div></div></li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+</div>

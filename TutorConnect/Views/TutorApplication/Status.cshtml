@@ -1,0 +1,62 @@
+﻿@model List<TutorApplication>
+@{
+    ViewBag.Title = "Application status";
+    var email = ViewBag.Email as string;
+    var steps = new[] { "Submitted", "Lecturer review", "Recommendation", "Decision" };
+}
+<div class="page-head">
+    <div><h1>Application status</h1><p>Enter the university or personal email you applied with.</p></div>
+    <div class="page-actions"><a class="btn btn-secondary" href="@Url.Action("Apply")">New application</a></div>
+</div>
+
+<form method="get" action="@Url.Action("Status")" class="card mb">
+    <div class="card-body inline-form">
+        <div class="field"><label for="email">Email</label><input type="email" id="email" name="email" value="@email" required /></div>
+        <button type="submit" class="btn btn-primary">Check status</button>
+    </div>
+</form>
+
+@if (!string.IsNullOrWhiteSpace(email) && Model.Count == 0)
+{
+    <div class="card"><div class="empty"><i class="fa-regular fa-folder-open"></i><p>No applications found for @email.</p><a class="btn btn-primary btn-sm" href="@Url.Action("Apply")">Apply now</a></div></div>
+}
+
+<div class="stack">
+    @foreach (var a in Model)
+    {
+        var reached = a.IsDecided ? 4 : a.LecturerRecommendation != null ? 3 : a.AssignedLecturerId.HasValue ? 2 : 1;
+        <div class="card">
+            <div class="card-head">
+                <div><h2><span class="tag">@a.ModuleCode</span> @a.ModuleName</h2><p>For year @a.TutorYear students, submitted @Ui.Date(a.SubmittedAt)</p></div>
+                @Ui.Badge(a.Status)
+            </div>
+            <div class="card-body grid grid-2">
+                <ol class="timeline">
+                    @for (var i = 0; i < steps.Length; i++)
+                    {
+                        var cls = i + 1 < reached || (i + 1 == reached && a.IsDecided) ? "done" : i + 1 == reached ? "current" : "";
+                        <li class="@cls"><b>@steps[i]</b>
+                            @if (i == 1 && a.LecturerName != null) { <div class="small muted">With @a.LecturerName</div> }
+                            @if (i == 3 && a.DecidedAt.HasValue) { <div class="small muted">@Ui.Date(a.DecidedAt.Value)</div> }
+                        </li>
+                    }
+                </ol>
+                <div>
+                    @if (a.Status == "Approved")
+                    {
+                        <p><strong>Congratulations, you've been approved.</strong> Your login details were emailed to @a.PersonalEmail. Sign in on the Tutor tab with @a.Email.</p>
+                    }
+                    else if (a.Status == "Rejected")
+                    {
+                        <p>Your application wasn't successful this time.</p>
+                    }
+                    else
+                    {
+                        <p class="text-2">Your application is being processed. You'll get an email when a decision is made.</p>
+                    }
+                    @if (!string.IsNullOrEmpty(a.AdminFeedback)) { <h3 style="margin:12px 0 6px">Feedback</h3><p class="quote">@a.AdminFeedback</p> }
+                </div>
+            </div>
+        </div>
+    }
+</div>

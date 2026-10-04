@@ -1,0 +1,102 @@
+﻿@model BookViewModel
+@{
+    ViewBag.Title = "Book a session";
+    var byDay = Model.Slots.GroupBy(s => s.StartTime.Date).ToList();
+}
+<a class="back-link" href="@Url.Action("FindTutor")"><i class="fa-solid fa-arrow-left"></i>Back to tutors</a>
+<div class="page-head">
+    <div class="person">
+        @Ui.Avatar(Model.TutorName, "lg")
+        <div><h1>Book @Model.TutorName</h1><p style="margin-top:2px">One-on-one sessions cost @Ui.Money(Model.HourlyRate) an hour. You'll pay on PayFast before the request goes to your tutor.</p></div>
+    </div>
+</div>
+
+@using (Html.BeginForm("Book", "Student", FormMethod.Post, new { data_book_form = "", data_rate = Model.HourlyRate.ToString(System.Globalization.CultureInfo.InvariantCulture) }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.TutorId)
+    @Html.ValidationSummary(false, "", new { @class = "alert alert-error" })
+
+    <div class="grid grid-aside">
+        <div class="stack">
+            <div class="card">
+                <div class="card-head"><div><h2>1. Module</h2><p>Only modules this tutor covers for your year.</p></div></div>
+                <div class="card-body">
+                    <div class="slot-grid">
+                        @foreach (var m in Model.Modules)
+                        {
+                            <label class="slot-option">
+                                <input type="radio" name="ModuleId" value="@m.ModuleId" @(Model.ModuleId == m.ModuleId ? "checked" : null) />
+                                <span><b>@m.ModuleCode</b><small>@m.ModuleName</small></span>
+                            </label>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><div><h2>2. Time slot</h2><p>Your session starts at the beginning of the slot you pick.</p></div></div>
+                <div class="card-body">
+                    @if (Model.Slots.Count == 0)
+                    {
+                        <div class="empty" style="padding:12px"><i class="fa-regular fa-calendar-xmark"></i><p>@Model.TutorName has no open slots right now. Check back soon.</p></div>
+                    }
+                    @foreach (var day in byDay)
+                    {
+                        <h3 style="margin:4px 0 10px">@day.Key.ToString("dddd d MMMM")</h3>
+                        <div class="slot-grid" style="margin-bottom:16px">
+                            @foreach (var s in day)
+                            {
+                                <label class="slot-option">
+                                    <input type="radio" name="SlotId" value="@s.SlotId" data-max="@Math.Min(8, s.MaxHours)" data-label="@Ui.DateTime(s.StartTime)" @(Model.SlotId == s.SlotId ? "checked" : null) />
+                                    <span><b>@Ui.Time(s.StartTime) &ndash; @Ui.Time(s.EndTime)</b><small>Up to @Math.Min(8, s.MaxHours) h</small></span>
+                                </label>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><div><h2>3. How long?</h2><p>Whole hours only.</p></div></div>
+                <div class="card-body">
+                    <div class="hours-picker">
+                        <button type="button" class="icon-btn" data-step="-1" aria-label="One hour less"><i class="fa-solid fa-minus"></i></button>
+                        <label for="Hours" class="sr-only">Hours</label>
+                        <input type="number" id="Hours" name="Hours" value="@Model.Hours" min="1" max="8" />
+                        <button type="button" class="icon-btn" data-step="1" aria-label="One hour more"><i class="fa-solid fa-plus"></i></button>
+                        <span class="muted small" data-max-note></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="align-self:start;position:sticky;top:84px">
+            <div class="card-head"><h2>Summary</h2></div>
+            <div class="card-body">
+                <div class="summary-line"><span class="muted">Tutor</span><span>@Model.TutorName</span></div>
+                <div class="summary-line"><span class="muted">Starts</span><span data-slot-label>Choose a slot</span></div>
+                <div class="summary-line"><span class="muted">Duration</span><span data-hours-label></span></div>
+                <div class="summary-line" style="align-items:center"><span class="muted">Total</span><span class="summary-total" data-total>@Ui.Money(Model.HourlyRate)</span></div>
+                @if (!Model.TutorCanBePaid)
+                {
+                    <div class="alert alert-warning" style="margin:16px 0 0"><i class="fa-solid fa-building-columns"></i>
+                        <div class="alert-body"><b>@Model.TutorName can't receive payments yet.</b> They haven't added a bank account. Ask them to add it, then come back to book.</div></div>
+                }
+                <button type="submit" class="btn btn-primary btn-lg btn-block" style="margin-top:16px" @(Model.Slots.Count == 0 || !Model.TutorCanBePaid ? "disabled" : null)>
+                    <i class="fa-solid fa-lock"></i>Continue to payment
+                </button>
+                <p class="small muted" style="margin:12px 0 0">Your tutor approves the request after payment. If they decline, the slot is released.</p>
+            </div>
+        </div>
+    </div>
+}
+
+@if (!Model.TutorCanBePaid)
+{
+    using (Html.BeginForm("RequestTutorBanking", "Student", new { tutorId = Model.TutorId }, FormMethod.Post, new { @class = "ask-banking" }))
+    {
+        @Html.AntiForgeryToken()
+        <button type="submit" class="btn btn-secondary"><i class="fa-solid fa-paper-plane"></i>Ask @Model.TutorName to add their banking details</button>
+    }
+}

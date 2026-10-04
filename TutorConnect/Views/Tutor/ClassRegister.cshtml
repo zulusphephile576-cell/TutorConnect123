@@ -1,0 +1,15 @@
+﻿@model RegisterSheetViewModel
+@{
+    var r = Model.ClassRegister;
+    ViewBag.Title = "Register: " + r.Title;
+}
+<a class="back-link" href="@Url.Action("Registers")"><i class="fa-solid fa-arrow-left"></i>All registers</a>
+<div class="page-head">
+    <div>
+        <span class="tag">@r.ModuleCode</span> <span class="small muted">Year @r.YearOfStudy</span>
+        <h1 style="margin-top:8px">@r.Title</h1>
+        <p>@Ui.Date(r.RegisterDate). Changes save as soon as you click.</p>
+    </div>
+    <div class="page-actions"><button type="button" class="btn btn-secondary" onclick="window.print()"><i class="fa-solid fa-print"></i>Print</button></div>
+</div>
+@Html.Partial("_Sheet", Model.Students, new ViewDataDictionary { { "MarkUrl", Url.Action("MarkClassRegister") }, { "Key", "registerId" }, { "Id", r.RegisterId } })

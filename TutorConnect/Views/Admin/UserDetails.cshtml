@@ -1,0 +1,168 @@
+﻿@model TutorConnect.Models.User
+@{
+    ViewBag.Title = Model.FullName;
+    var sum = ViewBag.Summary as TutorConnect.Models.User;
+    var data = (Dictionary<string, object>)ViewBag.Data;
+    var assignments = ViewBag.Assignments as List<TutorAssignment>;
+    var banking = ViewBag.Banking as BankingDetails;
+    var lecturerModules = ViewBag.LecturerModules as List<Module>;
+    var ci = System.Globalization.CultureInfo.InvariantCulture;
+
+    Func<object, string> show = v =>
+    {
+        if (v == null || v is DBNull) return "–";
+        if (v is DateTime)
+        {
+            var d = (DateTime)v;
+            return d.TimeOfDay == TimeSpan.Zero ? d.ToString("d MMM yyyy", ci) : d.ToString("d MMM yyyy, HH:mm", ci);
+        }
+        if (v is bool) return (bool)v ? "Yes" : "No";
+        var s = Convert.ToString(v, ci);
+        return string.IsNullOrWhiteSpace(s) ? "–" : s;
+    };
+    Func<string, string> label = k =>
+    {
+        var spaced = System.Text.RegularExpressions.Regex.Replace(k, "([a-z])([A-Z])", "$1 $2");
+        return char.ToUpperInvariant(spaced[0]) + spaced.Substring(1).ToLowerInvariant();
+    };
+    Func<string, List<Dictionary<string, object>>> rows = key =>
+        data.ContainsKey(key) ? (data[key] as List<Dictionary<string, object>>) ?? new List<Dictionary<string, object>>() : new List<Dictionary<string, object>>();
+
+    var sections = new[]
+    {
+        new { Key = "modules", Title = "Registered modules", Icon = "fa-book" },
+        new { Key = "bookings", Title = "Bookings", Icon = "fa-calendar-check" },
+        new { Key = "payments", Title = "Payments", Icon = "fa-money-bill-wave" },
+        new { Key = "attendance", Title = "Attendance", Icon = "fa-clipboard-check" },
+        new { Key = "tutorApplications", Title = "Tutor applications", Icon = "fa-file-signature" },
+        new { Key = "activity", Title = "Activity and notifications", Icon = "fa-bell" }
+    };
+    var bookings = rows("bookings");
+    var attendance = rows("attendance");
+    var attended = attendance.Count(r => r.ContainsKey("Status") && Convert.ToString(r["Status"]) != "Absent");
+}
+<a class="back-link" href="@Url.Action("Users", new { role = Model.Role })"><i class="fa-solid fa-arrow-left"></i>Back to users</a>
+
+<div class="card hero mb">
+    <div class="hero-inner">
+        <div class="person">
+            @Ui.Avatar(Model.FullName, "lg")
+            <div>
+                <h1 style="font-size:1.7rem">@Model.FullName</h1>
+                <p style="margin:4px 0 0">@Model.Role@(sum != null && sum.CourseName != null ? ", " + sum.CourseName : "")@(Model.YearOfStudy.HasValue ? ", year " + Model.YearOfStudy : "")</p>
+            </div>
+        </div>
+        <div class="hero-actions">
+            <a class="btn btn-white" href="@Url.Action("EditUser", new { id = Model.UserId })"><i class="fa-regular fa-pen-to-square"></i>Edit</a>
+            <a class="btn btn-light" href="mailto:@Model.Email">Email</a>
+        </div>
+    </div>
+</div>
+
+<div class="stats mb">
+    <div class="stat"><div class="stat-top">Status<span class="stat-icon @(Model.IsActive ? "success" : "danger")"><i class="fa-solid fa-user-check"></i></span></div><div class="stat-value" style="font-size:1.3rem">@(Model.IsActive ? "Active" : "Inactive")</div><div class="stat-note">@(Model.IsLockedOut ? "Locked until " + Model.LockoutUntil.Value.ToString("HH:mm", ci) : "Not locked")</div></div>
+    <div class="stat"><div class="stat-top">Bookings<span class="stat-icon"><i class="fa-solid fa-calendar-check"></i></span></div><div class="stat-value">@bookings.Count</div></div>
+    <div class="stat"><div class="stat-top">Attendance records<span class="stat-icon info"><i class="fa-solid fa-clipboard-check"></i></span></div><div class="stat-value">@attendance.Count</div><div class="stat-note">@(attendance.Count == 0 ? "No records yet" : Ui.Pct(attended, attendance.Count) + "% present")</div></div>
+    <div class="stat"><div class="stat-top">Member since<span class="stat-icon warning"><i class="fa-regular fa-calendar"></i></span></div><div class="stat-value" style="font-size:1.3rem">@Model.CreatedAt.ToString("d MMM yyyy", ci)</div></div>
+</div>
+
+<div class="grid grid-2 mb">
+    <div class="card">
+        <div class="card-head"><h2>Personal and contact</h2></div>
+        <div class="card-body"><dl class="dl">
+            <dt>Full name</dt><dd>@Model.FullName</dd>
+            <dt>University email</dt><dd>@Model.Email</dd>
+            <dt>Personal email</dt><dd>@show(Model.PersonalEmail)</dd>
+            <dt>Mobile</dt><dd>@show(Model.Phone)</dd>
+            <dt>Date of birth</dt><dd>@(Model.DateOfBirth.HasValue ? Model.DateOfBirth.Value.ToString("d MMMM yyyy", ci) : "–")</dd>
+            <dt>Gender</dt><dd>@show(Model.Gender)</dd>
+            <dt>Emergency contact</dt><dd>@(string.IsNullOrEmpty(Model.EmergencyContactName) ? "–" : Model.EmergencyContactName + ", " + Model.EmergencyContactPhone)</dd>
+        </dl></div>
+    </div>
+    <div class="card">
+        <div class="card-head"><h2>Studies</h2></div>
+        <div class="card-body"><dl class="dl">
+            <dt>Student number</dt><dd>@show(Model.StudentNumber)</dd>
+            <dt>Faculty</dt><dd>@(sum != null ? show(sum.FacultyName) : "–")</dd>
+            <dt>Department</dt><dd>@(sum != null ? show(sum.DepartmentName) : "–")</dd>
+            <dt>Course</dt><dd>@(sum != null && sum.CourseName != null ? sum.CourseName + " (" + sum.CourseCode + ")" : "–")</dd>
+            <dt>Year of study</dt><dd>@(Model.YearOfStudy.HasValue ? "Year " + Model.YearOfStudy : "–")</dd>
+            <dt>Campus</dt><dd>@show(Model.Campus)</dd>
+        </dl></div>
+    </div>
+    <div class="card">
+        <div class="card-head"><h2>Account and privacy (POPIA)</h2></div>
+        <div class="card-body"><dl class="dl">
+            <dt>Role</dt><dd>@Model.Role</dd>
+            <dt>Created</dt><dd>@Model.CreatedAt.ToString("d MMM yyyy, HH:mm", ci) (SAST)</dd>
+            <dt>Privacy consent</dt><dd>@(Model.PopiaConsentAt.HasValue ? "Accepted " + Model.PopiaConsentAt.Value.ToString("d MMM yyyy, HH:mm", ci) : "Not yet accepted")</dd>
+            <dt>Deletion request</dt><dd>@(Model.DeletionRequestedAt.HasValue ? "Requested " + Model.DeletionRequestedAt.Value.ToString("d MMM yyyy", ci) : "None")</dd>
+            <dt>Failed sign-ins</dt><dd>@Model.FailedLoginCount</dd>
+            <dt>Email notifications</dt><dd>@(Model.EmailNotifications ? "On" : "Off")</dd>
+            <dt>Dark mode</dt><dd>@(Model.DarkMode ? "On" : "Off")</dd>
+        </dl></div>
+    </div>
+
+    @if (Model.Role == "Tutor")
+    {
+        <div class="card">
+            <div class="card-head"><h2>Tutoring</h2></div>
+            <div class="card-body">
+                <dl class="dl">
+                    <dt>Banking details</dt><dd>@(banking == null ? "Not added yet (payouts wait until added)" : banking.BankName + ", " + banking.AccountType + ", account ending " + banking.AccountLast4)</dd>
+                    <dt>Modules tutored</dt><dd>@(assignments == null || assignments.Count == 0 ? "None assigned" : string.Join(", ", assignments.Select(a => a.Label)))</dd>
+                </dl>
+            </div>
+        </div>
+    }
+    @if (Model.Role == "Lecturer")
+    {
+        <div class="card">
+            <div class="card-head"><h2>Modules lectured</h2></div>
+            @if (lecturerModules == null || lecturerModules.Count == 0)
+            {
+                <div class="empty"><p>No modules assigned to this lecturer.</p></div>
+            }
+            else
+            {
+                <div class="table-wrap"><table class="table">
+                    <thead><tr><th>Module</th><th>Year</th><th class="right">Tutors</th><th class="right">Students</th></tr></thead>
+                    <tbody>@foreach (var m in lecturerModules) { <tr><td><span class="tag">@m.Code</span> @m.Name</td><td>@m.YearLevel</td><td class="right">@m.TutorCount of @m.TutorsNeeded</td><td class="right">@m.StudentCount</td></tr> }</tbody>
+                </table></div>
+            }
+        </div>
+    }
+</div>
+
+@foreach (var sec in sections)
+{
+    var list = rows(sec.Key);
+    <div class="card mb">
+        <div class="card-head"><div><h2><i class="fa-solid @sec.Icon" style="color:var(--primary);margin-right:8px"></i>@sec.Title</h2><p>@list.Count @(list.Count == 1 ? "record" : "records")</p></div></div>
+        @if (list.Count == 0)
+        {
+            <div class="empty" style="padding:18px"><p style="margin:0">None.</p></div>
+        }
+        else
+        {
+            var cols = list[0].Keys.ToList();
+            <div class="table-wrap" style="max-height:420px;overflow-y:auto">
+                <table class="table">
+                    <thead><tr>@foreach (var c in cols) { <th>@label(c)</th> }</tr></thead>
+                    <tbody>
+                        @foreach (var r in list)
+                        {
+                            <tr>@foreach (var c in cols)
+                            {
+                                var v = r[c];
+                                if (c == "Amount" && v is decimal) { <td class="mono">@Ui.Money((decimal)v)</td> }
+                                else if (c == "Status" || c == "AttendanceStatus") { <td>@(v == null ? Html.Raw("–") : Ui.Badge(Convert.ToString(v)))</td> }
+                                else { <td>@show(v)</td> }
+                            }</tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+}

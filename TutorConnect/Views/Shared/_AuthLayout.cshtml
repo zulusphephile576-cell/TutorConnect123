@@ -1,0 +1,52 @@
+﻿@{
+    var flash = TempData["Flash"] as string;
+    var flashType = (TempData["FlashType"] as string) ?? "success";
+    if (Request.QueryString["tooLarge"] == "1")
+    {
+        flash = "Your files were too large to send together (the limit is 50 MB in total). Choose smaller files, for example a PDF scan instead of a phone photo, and try again.";
+        flashType = "error";
+    }
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@(ViewBag.Title ?? "Sign in") | TutorConnect</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" /></noscript>
+    <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" /></noscript>
+    <link rel="stylesheet" href="@Ui.Asset("~/Content/site.css")" />
+</head>
+<body>
+    <div class="auth">
+        <section class="auth-side">
+            <a class="brand" href="@Url.Action("Index", "Home")" style="padding:0"><span class="brand-mark"><i class="fa-solid fa-graduation-cap"></i></span>TutorConnect</a>
+            <div style="position:relative;z-index:1">
+                <h1>Academic support, organised in one place.</h1>
+                <p style="margin-top:14px">Book a tutor, show up to tutorials, and keep track of attendance without a single WhatsApp group.</p>
+                <ul class="auth-points">
+                    <li><i class="fa-solid fa-magnifying-glass"></i><span>Find tutors for your own modules and year of study.</span></li>
+                    <li><i class="fa-solid fa-qrcode"></i><span>Check in to tutorials by scanning a QR code.</span></li>
+                    <li><i class="fa-solid fa-shield-halved"></i><span>Secure PayFast payments at R105 an hour.</span></li>
+                </ul>
+            </div>
+            <small style="position:relative;z-index:1;color:rgba(255,255,255,.7)">Students, tutors, lecturers and administrators each get their own workspace.</small>
+        </section>
+        <main class="auth-main" id="main">
+            <div class="auth-card @(ViewBag.Wide == true ? "wide" : null)">
+                @if (flash != null)
+                {
+                    <div class="alert alert-@flashType" role="status"><i class="fa-solid @(flashType == "error" ? "fa-circle-exclamation" : "fa-circle-check")"></i><div class="alert-body">@flash</div></div>
+                }
+                @RenderBody()
+            </div>
+        </main>
+    </div>
+    @RenderSection("scripts", required: false)
+    <script src="@Ui.Asset("~/Scripts/site.js")"></script>
+</body>
+</html>

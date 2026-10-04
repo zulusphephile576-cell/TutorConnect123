@@ -1,0 +1,42 @@
+﻿@model List<TutorConnect.Models.ModuleRow>
+@* Repeatable module rows: filling in the last row adds a new empty one (no limit). site.js renumbers the
+   field names (Prefix[0].Code, Prefix[1].Code, ...) whenever rows are added or removed. *@
+@{
+    var prefix = (ViewData["Prefix"] as string) ?? "Modules";
+    var lecturers = ViewData["Lecturers"] as List<TutorConnect.Models.User>;
+    var rows = Model != null && Model.Count > 0 ? Model : new List<TutorConnect.Models.ModuleRow> { new TutorConnect.Models.ModuleRow() };
+}
+<div class="module-rows" data-repeat data-prefix="@prefix">
+    <div class="module-rows-head @(lecturers != null ? "with-lecturer" : null)" aria-hidden="true">
+        <span>Code</span><span>Module name</span><span>Year</span><span>Semester</span>@if (lecturers != null) { <span>Lecturer</span> }<span></span>
+    </div>
+    <div data-repeat-list>
+        @for (var i = 0; i < rows.Count; i++)
+        {
+            var r = rows[i];
+            <div class="module-row @(lecturers != null ? "with-lecturer" : null)" data-repeat-row>
+                <input type="text" name="@(prefix)[@i].Code" value="@r.Code" maxlength="20" placeholder="e.g. ITDB201" aria-label="Module code" data-row-key />
+                <input type="text" name="@(prefix)[@i].Name" value="@r.Name" maxlength="150" placeholder="e.g. Database Design 2" aria-label="Module name" data-row-key />
+                <select name="@(prefix)[@i].YearLevel" aria-label="Year of study">
+                    @for (var y = 1; y <= 7; y++) { <option value="@y" @(r.YearLevel == y ? "selected" : null)>Year @y</option> }
+                </select>
+                <select name="@(prefix)[@i].Semester" aria-label="Semester">
+                    <option value="1" @(r.Semester != 2 ? "selected" : null)>Semester 1</option>
+                    <option value="2" @(r.Semester == 2 ? "selected" : null)>Semester 2</option>
+                </select>
+                @if (lecturers != null)
+                {
+                    <select name="@(prefix)[@i].LecturerId" aria-label="Lecturer">
+                        <option value="">No lecturer yet</option>
+                        @foreach (var l in lecturers) { <option value="@l.UserId" @(r.LecturerId == l.UserId ? "selected" : null)>@l.FullName</option> }
+                    </select>
+                }
+                <button type="button" class="btn btn-ghost btn-sm row-remove" data-repeat-remove aria-label="Remove this module"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        }
+    </div>
+    <div class="module-rows-foot">
+        <button type="button" class="btn btn-ghost btn-sm" data-repeat-add><i class="fa-solid fa-plus"></i>Add another module</button>
+        <span class="small muted" data-repeat-count></span>
+    </div>
+</div>

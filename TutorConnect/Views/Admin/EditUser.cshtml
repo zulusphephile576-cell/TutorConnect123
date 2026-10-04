@@ -1,0 +1,80 @@
+﻿@model TutorConnect.Models.User
+@{
+    ViewBag.Title = "Edit " + Model.FullName;
+    var courses = (List<Course>)ViewBag.Courses;
+    var isStudentLike = Model.Role == "Student" || Model.Role == "Tutor";
+}
+<a class="back-link" href="@Url.Action("Users", new { role = Model.Role })"><i class="fa-solid fa-arrow-left"></i>Back to @(Model.Role.ToLowerInvariant())s</a>
+<div class="page-head">
+    <div class="person">@Ui.Avatar(Model.FullName, "lg")<div><h1>@Model.FullName</h1><p style="margin-top:2px">@Model.Role account</p></div></div>
+</div>
+
+@using (Html.BeginForm("EditUser", "Admin", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.UserId)
+    <div class="card" style="max-width:860px">
+        <div class="card-body">
+            @Html.ValidationSummary(false, "", new { @class = "alert alert-error" })
+            <div class="form-grid">
+                <div class="field"><label for="FirstName">First name</label>@Html.TextBoxFor(m => m.FirstName, new { required = "required" })</div>
+                <div class="field"><label for="LastName">Last name</label>@Html.TextBoxFor(m => m.LastName, new { required = "required" })</div>
+                <div class="field"><label for="Email">Login email</label>@Html.TextBoxFor(m => m.Email, new { type = "email", required = "required" })</div>
+                <div class="field"><label for="PersonalEmail">Personal email</label>@Html.TextBoxFor(m => m.PersonalEmail, new { type = "email" })</div>
+                <div class="field"><label for="Phone">Phone</label>@Html.TextBoxFor(m => m.Phone, new { type = "tel" })</div>
+                @if (isStudentLike)
+                {
+                    <div class="field"><label for="StudentNumber">Student number</label>@Html.TextBoxFor(m => m.StudentNumber)</div>
+                    <div class="field"><label for="CourseId">Course</label>
+                        <select id="CourseId" name="CourseId">
+                            <option value="">No course</option>
+                            @foreach (var grp in courses.GroupBy(c => (c.FacultyName ?? "No faculty") + " › " + (c.DepartmentName ?? "No department")))
+                            {
+                                <optgroup label="@grp.Key">
+                                    @foreach (var c in grp) { <option value="@c.CourseId" @(Model.CourseId == c.CourseId ? "selected" : null)>@c.Name (@c.Code)</option> }
+                                </optgroup>
+                            }
+                        </select>
+                        <span class="hint">Grouped by faculty and department.</span></div>
+                    <div class="field">
+                        <label for="YearOfStudy">Year of study</label>
+                        @Html.DropDownListFor(m => m.YearOfStudy, Enumerable.Range(1, 7).Select(y => new SelectListItem { Text = "Year " + y, Value = y.ToString(), Selected = Model.YearOfStudy == y }), "Not set")
+                        @if (Model.Role == "Student") { <span class="hint">Changing course or year re-registers the student's modules.</span> }
+                    </div>
+                }
+                else
+                {
+                    @Html.HiddenFor(m => m.StudentNumber)
+                    @Html.HiddenFor(m => m.CourseId)
+                    @Html.HiddenFor(m => m.YearOfStudy)
+                }
+                <div class="field full">
+                    <label class="check" style="border:0;padding:4px 0">
+                        <span class="switch"><input type="checkbox" name="IsActive" value="true" @(Model.IsActive ? "checked" : null) /><span></span></span>
+                        <span><b>Account active</b><br /><span class="muted small">Inactive accounts can't sign in.</span></span>
+                    </label>
+                    <input type="hidden" name="IsActive" value="false" />
+                </div>
+            </div>
+            <div class="form-actions">
+                <a class="btn btn-ghost" href="@Url.Action("Users", new { role = Model.Role })">Cancel</a>
+                <button type="submit" class="btn btn-primary">Save changes</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (Model.DateOfBirth.HasValue || !string.IsNullOrEmpty(Model.Campus) || !string.IsNullOrEmpty(Model.Gender) || !string.IsNullOrEmpty(Model.EmergencyContactName))
+{
+    <div class="card mt" style="max-width:860px">
+        <div class="card-head"><div><h2>Details from registration</h2><p>The user can update these themselves under Settings.</p></div></div>
+        <div class="card-body">
+            <dl class="dl">
+                @if (Model.DateOfBirth.HasValue) { <dt>Date of birth</dt><dd>@Model.DateOfBirth.Value.ToString("d MMMM yyyy")</dd> }
+                @if (!string.IsNullOrEmpty(Model.Gender)) { <dt>Gender</dt><dd>@Model.Gender</dd> }
+                @if (!string.IsNullOrEmpty(Model.Campus)) { <dt>Campus</dt><dd>@Model.Campus</dd> }
+                @if (!string.IsNullOrEmpty(Model.EmergencyContactName)) { <dt>Emergency contact</dt><dd>@Model.EmergencyContactName, @Model.EmergencyContactPhone</dd> }
+            </dl>
+        </div>
+    </div>
+}

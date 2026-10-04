@@ -1,0 +1,151 @@
+﻿@model List<TutorAssignment>
+@{
+    ViewBag.Title = "Assign tutors";
+    var modules = (List<Module>)ViewBag.Modules;
+    var tutors = (List<TutorPoolEntry>)ViewBag.Tutors;
+    var years = modules.Select(m => m.YearLevel).Distinct().OrderBy(y => y).ToList();
+    var needed = modules.Sum(m => m.TutorsNeeded);
+    var assigned = modules.Sum(m => m.TutorCount);
+    var openPositions = modules.Sum(m => m.OpenPositions);
+    var openSlots = modules.Sum(m => m.OpenSlots);
+}
+<div class="page-head">
+    <div><h1>Assign tutors</h1><p>Say how many tutors each of your modules needs, then assign tutors to fill those places. Administrators see these numbers too.</p></div>
+</div>
+
+<div class="stats mb">
+    <div class="stat"><div class="stat-top">Tutors needed<span class="stat-icon"><i class="fa-solid fa-users"></i></span></div><div class="stat-value">@needed</div><div class="stat-note">Across @modules.Count @(modules.Count == 1 ? "module" : "modules")</div></div>
+    <div class="stat"><div class="stat-top">Tutors assigned<span class="stat-icon success"><i class="fa-solid fa-user-check"></i></span></div><div class="stat-value">@assigned</div></div>
+    <div class="stat @(openPositions > 0 ? "feature" : null)"><div class="stat-top">Open positions<span class="stat-icon warning"><i class="fa-solid fa-user-plus"></i></span></div><div class="stat-value">@openPositions</div><div class="stat-note">Still to be filled</div></div>
+    <div class="stat"><div class="stat-top">Open booking slots<span class="stat-icon info"><i class="fa-regular fa-clock"></i></span></div><div class="stat-value">@openSlots</div><div class="stat-note">Offered by your modules' tutors</div></div>
+</div>
+
+<div class="card mb" id="needs">
+    <div class="card-head"><div><h2>Tutor needs per module</h2><p>Grouped by year of study. Change a number and press Save.</p></div></div>
+    @if (modules.Count == 0)
+    {
+        <div class="empty"><i class="fa-solid fa-book"></i><p>No modules are linked to you yet. An administrator links lecturers to modules.</p></div>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Module</th><th class="right">Students</th><th style="width:210px">Tutors needed</th><th class="right">Assigned</th><th>Positions</th><th class="right">Open slots</th></tr></thead>
+                @foreach (var y in years)
+                {
+                    <tbody>
+                        <tr class="group-row"><td colspan="6">Year @y</td></tr>
+                        @foreach (var m in modules.Where(x => x.YearLevel == y))
+                        {
+                            <tr>
+                                <td><span class="tag">@m.Code</span> @m.Name</td>
+                                <td class="right mono">@m.StudentCount</td>
+                                <td>
+                                    @using (Html.BeginForm("SetTutorsNeeded", "Lecturer", new { moduleId = m.ModuleId }, FormMethod.Post, new { @class = "needed-form" }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <label class="sr-only" for="needed-@m.ModuleId">Tutors needed for @m.Code</label>
+                                        <input type="number" id="needed-@m.ModuleId" name="needed" min="0" max="50" value="@m.TutorsNeeded" />
+                                        <button type="submit" class="btn btn-secondary btn-sm">Save</button>
+                                    }
+                                </td>
+                                <td class="right mono">@m.TutorCount</td>
+                                <td>
+                                    @if (m.OpenPositions > 0) { <span class="badge badge-warning">@m.OpenPositions open</span> }
+                                    else if (m.TutorsNeeded == 0) { <span class="badge badge-muted">None needed</span> }
+                                    else { <span class="badge badge-success">Filled</span> }
+                                </td>
+                                <td class="right mono">@m.OpenSlots</td>
+                            </tr>
+                        }
+                    </tbody>
+                }
+            </table>
+        </div>
+    }
+</div>
+
+<div class="grid grid-aside">
+    <div class="card">
+        <div class="table-tools" data-filter-table="#assignments">
+            <h2 style="margin-right:auto">Current assignments</h2>
+            <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Search tutor or module" aria-label="Search assignments" /></div>
+            <select data-filter-attr="year" aria-label="Filter by year" style="width:auto"><option value="">All years</option>@foreach (var y in years) { <option value="@y">Year @y</option> }</select>
+            <select data-filter-attr="module" aria-label="Filter by module" style="width:auto"><option value="">All modules</option>@foreach (var m in modules) { <option value="@m.Code">@m.Code</option> }</select>
+        </div>
+        <div class="table-wrap">
+            <table class="table" id="assignments">
+                <thead><tr><th>Module</th><th>Year</th><th>Tutor</th><th>Assigned</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var a in Model)
+                    {
+                        <tr data-year="@a.YearOfStudy" data-module="@a.ModuleCode">
+                            <td><span class="tag">@a.ModuleCode</span> @a.ModuleName</td>
+                            <td>@a.YearOfStudy</td>
+                            <td><div class="person">@Ui.Avatar(a.TutorName, "sm")<div><div>@a.TutorName</div><div class="small muted">@a.TutorEmail</div></div></div></td>
+                            <td class="small muted nowrap">@Ui.Ago(a.AssignedAt)@(a.AssignedByName == null ? "" : ", by " + a.AssignedByName)</td>
+                            <td class="right">
+                                @using (Html.BeginForm("RemoveAssignment", "Lecturer", new { id = a.TutorModuleId }, FormMethod.Post, new { data_confirm = "Remove " + a.TutorName + " from " + a.ModuleCode + "?" }))
+                                {
+                                    @Html.AntiForgeryToken()<button type="submit" class="btn btn-ghost btn-sm" aria-label="Remove assignment"><i class="fa-solid fa-user-minus"></i></button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    <tr class="no-results"><td colspan="5"><div class="empty">No assignments match.</div></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card" style="align-self:start">
+        <div class="card-head"><div><h2>Assign a tutor</h2><p>Year first, then module, then tutor.</p></div></div>
+        @if (modules.Count == 0 || tutors.Count == 0)
+        {
+            <div class="card-body"><p class="muted" style="margin:0">@(modules.Count == 0 ? "No modules are linked to you yet." : "There are no active tutors yet. Tutors are created when an administrator approves an application.")</p></div>
+        }
+        else
+        {
+            using (Html.BeginForm("Assign", "Lecturer", FormMethod.Post, new { data_assign_form = "" }))
+            {
+                @Html.AntiForgeryToken()
+                <div class="card-body stack" style="gap:14px">
+                    <div class="field"><label for="yearOfStudy">1. Year of study</label>
+                        <select id="yearOfStudy" name="yearOfStudy" data-assign-year required>
+                            <option value="">Choose a year</option>
+                            @foreach (var y in years) { <option value="@y">Year @y</option> }
+                        </select></div>
+                    <div class="field"><label for="moduleId">2. Module</label>
+                        <select id="moduleId" name="moduleId" data-assign-module required disabled>
+                            <option value="">Choose a year first</option>
+                            @foreach (var m in modules)
+                            {
+                                <option value="@m.ModuleId" data-year="@m.YearLevel" data-code="@m.Code" data-open="@m.OpenPositions">@m.Code, @m.Name (@m.TutorCount of @m.TutorsNeeded)</option>
+                            }
+                        </select>
+                        <span class="hint" data-assign-module-hint></span></div>
+                    <div class="field">
+                        <span class="label">3. Tutor</span>
+                        <div class="search" style="max-width:none"><i class="fa-solid fa-magnifying-glass"></i><input type="search" data-assign-search placeholder="Search name, email or student number" aria-label="Search tutors" /></div>
+                        <label class="check" style="padding:8px 0;border:0"><input type="checkbox" data-assign-only-module checked /><span class="small">Only tutors who tutor or were approved for this module</span></label>
+                        <div class="tutor-pick" role="radiogroup" aria-label="Tutor">
+                            @foreach (var t in tutors)
+                            {
+                                <label class="tutor-option" data-modules="@string.Join(",", t.AllModules)">
+                                    <input type="radio" name="tutorId" value="@t.UserId" required />
+                                    <span class="tutor-option-body">
+                                        @Ui.Avatar(t.FullName, "sm")
+                                        <span class="tutor-option-text"><b>@t.FullName</b><small>@t.Email@(string.IsNullOrEmpty(t.StudentNumber) ? "" : ", " + t.StudentNumber)</small>
+                                            <span class="tutor-option-tags">@foreach (var code in t.AllModules) { <span class="tag">@code</span> }<small class="muted">@t.OpenSlots open @(t.OpenSlots == 1 ? "slot" : "slots")</small></span></span>
+                                    </span>
+                                </label>
+                            }
+                            <p class="small muted tutor-pick-empty" data-assign-empty hidden>No tutors match. Untick the box above to see every tutor.</p>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Assign tutor</button>
+                </div>
+            }
+        }
+    </div>
+</div>

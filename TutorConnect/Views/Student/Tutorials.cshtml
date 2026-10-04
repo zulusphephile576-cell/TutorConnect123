@@ -1,0 +1,78 @@
+﻿@model List<Tutorial>
+@{
+    ViewBag.Title = "Tutorials";
+    var upcoming = Model.Where(t => !t.IsPast).ToList();
+    var past = Model.Where(t => t.IsPast).ToList();
+}
+<div class="page-head">
+    <div><h1>Tutorials</h1><p>Group tutorials for your registered modules and year of study. When a tutorial is running, scan the QR code your tutor shows to check in.</p></div>
+</div>
+
+<div class="card mb checkin-card">
+    <div class="card-body">
+        <div class="checkin-card-text">
+            <span class="stat-icon success"><i class="fa-solid fa-qrcode"></i></span>
+            <div><b>At a tutorial?</b><div class="small muted">Scan the QR code with your phone camera, or type the code shown under it.</div></div>
+        </div>
+        @using (Html.BeginForm("CheckInCode", "Student", FormMethod.Post, new { @class = "inline-form checkin-form" }))
+        {
+            @Html.AntiForgeryToken()
+            <div class="field"><label for="code" class="sr-only">Check-in code</label><input type="text" id="code" name="code" maxlength="8" placeholder="e.g. K7PM2X" autocomplete="off" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase;letter-spacing:.2em;font-weight:600" required /></div>
+            <button type="submit" class="btn btn-primary">Check me in</button>
+        }
+    </div>
+</div>
+
+<h2 class="mb" style="margin-bottom:12px">Coming up</h2>
+@if (upcoming.Count == 0)
+{
+    <div class="card mb"><div class="empty"><i class="fa-solid fa-chalkboard"></i><p>No upcoming tutorials yet. You'll get a notification when one is scheduled.</p></div></div>
+}
+else
+{
+    <div class="grid grid-2 mb">
+        @foreach (var t in upcoming)
+        {
+            <a class="card" href="@Url.Action("Tutorial", new { id = t.TutorialId })" style="color:inherit;text-decoration:none">
+                <div class="card-body" style="display:flex;gap:16px">
+                    <div class="date-tile"><b>@t.StartTime.Day</b><span>@t.StartTime.ToString("MMM")</span></div>
+                    <div class="list-main">
+                        <div class="spread"><span class="tag">@t.ModuleCode</span>@if (t.IsLive) { <span class="badge badge-success">Check-in open</span> }</div>
+                        <h3 style="margin:8px 0 4px">@t.Title</h3>
+                        <div class="list-meta"><i class="fa-regular fa-clock"></i> @Ui.TimeRange(t.StartTime, t.EndTime)</div>
+                        <div class="list-meta"><i class="fa-solid fa-location-dot"></i> @(string.IsNullOrEmpty(t.Venue) ? "Venue to be confirmed" : t.Venue)</div>
+                        <div class="list-meta"><i class="fa-regular fa-user"></i> @t.TutorName</div>
+                    </div>
+                </div>
+            </a>
+        }
+    </div>
+}
+
+<div class="card">
+    <div class="card-head"><h2>Past tutorials</h2></div>
+    @if (past.Count == 0)
+    {
+        <div class="empty"><p>None yet.</p></div>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Tutorial</th><th>Module</th><th>When</th><th>Tutor</th><th>Your attendance</th></tr></thead>
+                <tbody>
+                    @foreach (var t in past)
+                    {
+                        <tr>
+                            <td><a href="@Url.Action("Tutorial", new { id = t.TutorialId })">@t.Title</a></td>
+                            <td><span class="tag">@t.ModuleCode</span></td>
+                            <td class="nowrap">@Ui.TimeRange(t.StartTime, t.EndTime)</td>
+                            <td>@t.TutorName</td>
+                            <td>@Ui.Badge(t.MyStatus)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

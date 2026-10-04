@@ -1,0 +1,43 @@
+﻿@model List<RegisterEntry>
+@*
+    Shared register table. ViewData: MarkUrl, Key (tutorialId|registerId), Id.
+    Clicking a status saves immediately via site.js.
+*@
+<div class="card" data-register-sheet data-url="@ViewData["MarkUrl"]" data-key="@ViewData["Key"]" data-id="@ViewData["Id"]">
+    <div class="table-tools" data-filter-table="#sheet">
+        <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Search name or student number" aria-label="Search students" /></div>
+        <div class="tally" style="margin-left:auto">
+            <div><b data-tally="Present">0</b>Present</div>
+            <div><b data-tally="Absent">0</b>Absent</div>
+            <div><b data-tally="None">0</b>Not marked</div>
+        </div>
+    </div>
+    <div class="table-wrap">
+        <table class="table" id="sheet">
+            <thead><tr><th>Student</th><th>Student no.</th><th class="right">Attendance</th></tr></thead>
+            <tbody>
+                @foreach (var s in Model)
+                {
+                    <tr>
+                        <td><div class="person">@Ui.Avatar(s.StudentName, "sm")<div><div>@s.StudentName</div><div class="small muted">@s.Email</div></div></div></td>
+                        <td class="mono">@s.StudentNumber</td>
+                        <td class="right">
+                            <span class="method-qr" data-method-for="@s.StudentId">@(s.Method == "QR" ? "Scanned QR" : s.Method == "Auto" ? "Didn't check in" : "")</span>
+                            <span class="att-buttons" role="group" aria-label="Attendance for @s.StudentName" data-student="@s.StudentId">
+                                @foreach (var st in new[] { "Present", "Absent" })
+                                {
+                                    <button type="button" data-status="@st" class="@(s.Status == st ? "on" : null)" aria-pressed="@(s.Status == st ? "true" : "false")">@st</button>
+                                }
+                            </span>
+                        </td>
+                    </tr>
+                }
+                <tr class="no-results"><td colspan="3"><div class="empty">No students match.</div></td></tr>
+            </tbody>
+        </table>
+    </div>
+    @if (Model.Count == 0)
+    {
+        <div class="empty"><i class="fa-solid fa-users-slash"></i><p>No students are enrolled in this module for this year of study.</p></div>
+    }
+</div>

@@ -1,0 +1,49 @@
+﻿@model CheckoutViewModel
+@{
+    ViewBag.Title = "Checkout";
+    var p = Model.Payment;
+}
+<div style="max-width:620px;margin:0 auto">
+    <div class="page-head"><div><h1>Confirm and pay</h1><p>You'll be taken to PayFast's secure checkout. Your booking request is created as soon as PayFast confirms the payment.</p></div></div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="person" style="margin-bottom:16px">
+                @Ui.Avatar(p.TutorName, "lg")
+                <div><div class="person-name">@p.TutorName</div><div class="muted small"><span class="tag">@p.ModuleCode</span> @p.ModuleName</div></div>
+            </div>
+            <div class="summary-line"><span class="muted">Session starts</span><span>@Ui.DateTime(p.SessionStart)</span></div>
+            <div class="summary-line"><span class="muted">Duration</span><span>@p.Hours @(p.Hours == 1 ? "hour" : "hours") &times; @Ui.Money(p.HourlyRate)</span></div>
+            <div class="summary-line"><span class="muted">Reference</span><span class="mono small">@p.PaymentRef</span></div>
+            <div class="summary-line" style="align-items:center"><span class="muted">Total</span><span class="summary-total">@Ui.Money(p.Amount)</span></div>
+        </div>
+        <div class="card-foot">
+            <form action="@Model.ProcessUrl" method="post">
+                @foreach (var f in Model.Fields)
+                {
+                    <input type="hidden" name="@f.Key" value="@f.Value" />
+                }
+                <button type="submit" class="btn btn-primary btn-lg btn-block"><i class="fa-solid fa-lock"></i>Pay @Ui.Money(p.Amount) with PayFast</button>
+            </form>
+            <div class="row" style="justify-content:center;margin-top:10px">
+                <a class="btn btn-ghost btn-sm" href="@Url.Action("Cancel", new { reference = p.PaymentRef })">Cancel and choose another time</a>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.SimulationEnabled)
+    {
+        <div class="alert alert-warning mt">
+            <i class="fa-solid fa-flask"></i>
+            <div class="alert-body">
+                <strong>Development mode.</strong> PayFast sandbox can't send its confirmation to localhost, so returning from the sandbox completes the payment here instead.
+                You can also skip PayFast entirely:
+                @using (Html.BeginForm("Simulate", "Payment", new { reference = p.PaymentRef }, FormMethod.Post, new { style = "margin-top:10px" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-secondary btn-sm">Simulate a successful payment</button>
+                }
+            </div>
+        </div>
+    }
+</div>

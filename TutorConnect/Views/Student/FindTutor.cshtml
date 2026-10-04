@@ -1,0 +1,71 @@
+﻿@model List<TutorAssignment>
+@{
+    ViewBag.Title = "Find a tutor";
+    var q = ViewBag.Query as string;
+    var tutors = Model.GroupBy(a => a.TutorId).ToList();
+}
+<div class="page-head">
+    <div>
+        <h1>Find a tutor</h1>
+        <p>Tutors assigned to your modules for year @ViewBag.Year. Search by module code, module name or tutor name.</p>
+    </div>
+</div>
+
+<form method="get" action="@Url.Action("FindTutor")" class="card mb" role="search" data-live-search data-api="@Url.Content("~/api/v1/tutors")" data-book="@Url.Action("Book")">
+    <div class="card-body inline-form">
+        <div class="field">
+            <label for="q" class="sr-only">Search</label>
+            <div class="search" style="max-width:none"><i class="fa-solid fa-magnifying-glass"></i><input type="search" id="q" name="q" value="@q" placeholder="e.g. ITPR101, databases, or a tutor's name" /></div>
+        </div>
+        <button type="submit" class="btn btn-primary">Search</button>
+        @if (!string.IsNullOrEmpty(q)) { <a class="btn btn-ghost" href="@Url.Action("FindTutor")">Clear</a> }
+    </div>
+</form>
+<p class="small muted" data-live-status aria-live="polite" style="margin:-8px 0 14px"></p>
+<div data-tutor-results>
+
+@if (tutors.Count == 0)
+{
+    <div class="card"><div class="empty">
+        <i class="fa-solid fa-user-slash"></i>
+        @if (string.IsNullOrEmpty(q))
+        {
+            <p>No tutors have been assigned to your modules yet. Your lecturers assign tutors per module and year.</p>
+        }
+        else
+        {
+            <p>No tutors match "@q" for your year of study.</p>
+            <a class="btn btn-secondary btn-sm" href="@Url.Action("FindTutor")">Show all my tutors</a>
+        }
+    </div></div>
+}
+else
+{
+    <div class="grid grid-3">
+        @foreach (var g in tutors)
+        {
+            var t = g.First();
+            var open = t.OpenSlots;
+            <div class="card tutor-card">
+                <div class="card-body">
+                    <div class="person">
+                        @Ui.Avatar(t.TutorName, "lg")
+                        <div><div class="person-name">@t.TutorName</div><div class="muted small">@t.TutorEmail</div></div>
+                    </div>
+                    <div class="module-chips">
+                        @foreach (var m in g)
+                        {
+                            <span class="tag" title="@m.ModuleName">@m.ModuleCode</span>
+                        }
+                    </div>
+                    <p class="small text-2" style="margin:12px 0 0">@string.Join(", ", g.Select(m => m.ModuleName))</p>
+                </div>
+                <div class="card-foot spread">
+                    <span class="small @(open > 0 ? "text-2" : "muted")"><i class="fa-regular fa-clock"></i> @(open == 0 ? "No open slots" : open + (open == 1 ? " open slot" : " open slots"))</span>
+                    <a class="btn btn-primary btn-sm @(open == 0 ? "disabled" : null)" href="@Url.Action("Book", new { tutorId = t.TutorId })" @(open == 0 ? Html.Raw("aria-disabled=\"true\"") : null)>Book</a>
+                </div>
+            </div>
+        }
+    </div>
+}
+</div>

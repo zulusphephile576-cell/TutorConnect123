@@ -1,0 +1,63 @@
+﻿@model CourseCascadeModel
+@{
+    var facultyChosen = Model.FacultyId.HasValue && Model.Faculties.Any(f => f.FacultyId == Model.FacultyId.Value);
+    var departments = facultyChosen ? Model.Departments.Where(d => d.FacultyId == Model.FacultyId.Value).ToList() : new List<Department>();
+    var departmentChosen = Model.DepartmentId.HasValue && departments.Any(d => d.DepartmentId == Model.DepartmentId.Value);
+    var courses = departmentChosen ? Model.Courses.Where(c => c.DepartmentId == Model.DepartmentId.Value).ToList() : new List<Course>();
+}
+<div class="cascade full" data-cascade>
+    <div class="cascade-step @(facultyChosen ? "is-done" : "is-current")">
+        <span class="cascade-n" aria-hidden="true">1</span>
+        <div class="field">
+            <label for="FacultyId">@Model.FacultyLabel</label>
+            <select id="FacultyId" name="FacultyId" data-cascade-faculty>
+                <option value="">Choose a faculty</option>
+                @foreach (var f in Model.Faculties)
+                {
+                    <option value="@f.FacultyId" @(Model.FacultyId == f.FacultyId ? "selected" : null)>@f.Name</option>
+                }
+            </select>
+            @Html.ValidationMessage("FacultyId")
+        </div>
+    </div>
+
+    <div class="cascade-step @(departmentChosen ? "is-done" : facultyChosen ? "is-current" : "is-locked")">
+        <span class="cascade-n" aria-hidden="true">2</span>
+        <div class="field">
+            <label for="DepartmentId">Department</label>
+            <select id="DepartmentId" name="DepartmentId" data-cascade-department @(facultyChosen ? null : "disabled")>
+                <option value="">@(facultyChosen ? "Choose a department" : "Choose a faculty first")</option>
+                @foreach (var d in departments)
+                {
+                    <option value="@d.DepartmentId" @(Model.DepartmentId == d.DepartmentId ? "selected" : null)>@d.Name</option>
+                }
+            </select>
+            @Html.ValidationMessage("DepartmentId")
+        </div>
+    </div>
+
+    @if (Model.IncludeCourse)
+    {
+        <div class="cascade-step @(Model.CourseId.HasValue && courses.Any(c => c.CourseId == Model.CourseId.Value) ? "is-done" : departmentChosen ? "is-current" : "is-locked")">
+            <span class="cascade-n" aria-hidden="true">3</span>
+            <div class="field">
+                <label for="CourseId">Course</label>
+                <select id="CourseId" name="CourseId" data-cascade-course @(departmentChosen ? null : "disabled")>
+                    <option value="">@(departmentChosen ? (courses.Count == 0 ? "No courses in this department yet" : "Choose your course") : "Choose a department first")</option>
+                    @foreach (var c in courses)
+                    {
+                        <option value="@c.CourseId" @(Model.CourseId == c.CourseId ? "selected" : null)>@c.Name (@c.Code)</option>
+                    }
+                </select>
+                @if (!string.IsNullOrEmpty(Model.CourseHint)) { <span class="hint">@Model.CourseHint</span> }
+                @Html.ValidationMessage("CourseId")
+            </div>
+        </div>
+    }
+
+    @* Every option, for the browser to filter as choices change. Rendered as data so the lists stay strict. *@
+    <script type="application/json" data-cascade-data>@Html.Raw(System.Web.Helpers.Json.Encode(new {
+        departments = Model.Departments.Select(d => new { id = d.DepartmentId, faculty = d.FacultyId, name = d.Name }),
+        courses = Model.IncludeCourse ? Model.Courses.Where(c => c.DepartmentId.HasValue).Select(c => new { id = c.CourseId, department = c.DepartmentId.Value, name = c.Name + " (" + c.Code + ")" }) : null
+    }).Replace("</", "<\\/"))</script>
+</div>

@@ -1,0 +1,100 @@
+﻿@model CardCheckoutViewModel
+@{
+    ViewBag.Title = "Secure checkout";
+    var p = Model.Payment;
+    var tb = Model.TutorBanking;
+}
+<div class="co">
+    <h1 class="co-title"><i class="fa-solid fa-lock"></i>Secure checkout</h1>
+
+    <div class="co-grid">
+        @using (Html.BeginForm("PayByCard", "Payment", new { reference = p.PaymentRef }, FormMethod.Post, new { @class = "co-card co-form", data_card_form = "", autocomplete = "on", novalidate = "novalidate" }))
+        {
+            @Html.AntiForgeryToken()
+            <h2>Payment details</h2>
+
+            if (Model.Error != null)
+            {
+                <div class="alert alert-error" role="alert"><i class="fa-solid fa-circle-exclamation"></i><div class="alert-body">@Model.Error</div></div>
+            }
+
+            <h3>Card information</h3>
+            <div class="field">
+                <label for="cardholderName">Cardholder name</label>
+                <input type="text" id="cardholderName" name="cardholderName" value="@Model.CardholderName" maxlength="80" autocomplete="cc-name" placeholder="Name as it appears on the card" />
+            </div>
+
+            <div class="field">
+                <label for="cardNumber">Card number <i class="fa-solid fa-circle-check co-ok" data-card-ok hidden></i></label>
+                <div class="co-number">
+                    @* No name attribute: the full card number is never sent to the server. *@
+                    <input type="text" id="cardNumber" inputmode="numeric" autocomplete="cc-number" placeholder="1234 5678 9012 3456" maxlength="23" data-card-number />
+                    <span class="co-brands" aria-hidden="true"><span data-brand="Visa">VISA</span><span data-brand="Mastercard">MC</span><span data-brand="American Express">AMEX</span></span>
+                </div>
+                <span class="hint" data-card-hint></span>
+            </div>
+
+            <div class="form-grid">
+                <div class="field">
+                    <label for="cardExpiry">Expiry date</label>
+                    <input type="text" id="cardExpiry" name="cardExpiry" inputmode="numeric" autocomplete="cc-exp" placeholder="MM / YY" maxlength="7" data-card-expiry />
+                </div>
+                <div class="field">
+                    <div class="spread"><label for="cardCvv">CVV / CVC</label>
+                        <button type="button" class="co-link" data-cvv-help aria-expanded="false">What's this?</button></div>
+                    @* No name attribute: the CVV never leaves this page. *@
+                    <input type="password" id="cardCvv" inputmode="numeric" autocomplete="cc-csc" placeholder="3 or 4 digits" maxlength="4" data-card-cvv />
+                    <span class="hint" data-cvv-text hidden>The 3 digits on the back of your card, next to the signature strip. American Express cards have 4 digits on the front.</span>
+                </div>
+            </div>
+
+            <h3>Billing address</h3>
+            <div class="field">
+                <label for="street">Street address</label>
+                <input type="text" id="street" name="street" value="@Model.Street" maxlength="120" autocomplete="street-address" placeholder="e.g. 41 ML Sultan Road" data-billing />
+            </div>
+            <div class="form-grid">
+                <div class="field"><label for="city">City</label><input type="text" id="city" name="city" value="@Model.City" maxlength="60" autocomplete="address-level2" placeholder="e.g. Durban" data-billing /></div>
+                <div class="field"><label for="postalCode">Postal code</label><input type="text" id="postalCode" name="postalCode" value="@Model.PostalCode" maxlength="10" inputmode="numeric" autocomplete="postal-code" placeholder="e.g. 4001" data-billing /></div>
+            </div>
+            <div class="field">
+                <label for="country">Country</label>
+                <select id="country" name="country" autocomplete="country-name" data-billing>
+                    @foreach (var c in CardCheckoutViewModel.Countries) { <option @(Model.Country == c ? "selected" : null)>@c</option> }
+                </select>
+            </div>
+            <label class="check co-remember"><input type="checkbox" data-remember-billing /><span>Remember my billing address on this device</span></label>
+
+            <input type="hidden" name="cardBrand" data-card-brand-field />
+            <input type="hidden" name="cardLast4" data-card-last4-field />
+
+            <button type="submit" class="co-confirm"><i class="fa-solid fa-lock"></i>Confirm payment – @Ui.Money(p.Amount)</button>
+            <p class="co-small"><a href="@Url.Action("Checkout", new { reference = p.PaymentRef, method = "eft" })"><i class="fa-solid fa-building-columns"></i>Pay by bank (EFT) instead</a>
+<a href="@Url.Action("Cancel", new { reference = p.PaymentRef })">Cancel</a></p>
+
+            <div class="pay-processing" data-processing hidden>
+                <div class="pay-processing-box"><span class="pay-spinner"></span><b data-processing-text>Processing payment…</b><small>Please don't close this page.</small></div>
+            </div>
+        }
+
+        <aside class="co-side">
+            <div class="co-card">
+                <h2>Order summary</h2>
+                <div class="co-row"><small>Session</small><b><span class="tag">@p.ModuleCode</span> @p.ModuleName</b></div>
+                <div class="co-row"><small>Tutor</small><span>@p.TutorName</span></div>
+                <div class="co-row"><small>When</small><span>@Ui.DateTime(p.SessionStart)</span></div>
+                <div class="co-row co-price"><span>Price</span><b>@Ui.Money(p.Amount)</b></div>
+                <div class="co-sub">@p.Hours @(p.Hours == 1 ? "hour" : "hours") × @Ui.Money(p.HourlyRate) one-on-one tutoring</div>
+                <div class="co-total"><small>Total</small><b>@Ui.Money(p.Amount)</b></div>
+            </div>
+            <div class="co-card co-payee">
+                <small>Paid to your tutor</small>
+                <b>@tb.AccountHolder</b>
+                <span>@tb.BankName •••• @tb.AccountLast4</span>
+                <span class="mono small">Reference @p.PaymentRef</span>
+            </div>
+            <div class="co-accepts"><span>We accept</span><span class="co-chip">VISA</span><span class="co-chip">MASTERCARD</span><span class="co-chip">AMEX</span></div>
+            <p class="co-note"><i class="fa-solid fa-shield-halved"></i>Your full card number and CVV are never stored. Your receipt shows only the card type and last four digits.</p>
+        </aside>
+    </div>
+</div>

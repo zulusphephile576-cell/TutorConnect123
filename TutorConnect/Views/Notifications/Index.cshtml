@@ -1,0 +1,54 @@
+﻿@model List<ActivityItem>
+@{
+    ViewBag.Title = "Notifications";
+    var links = (Dictionary<int, string>)ViewBag.Links;
+    var highlight = ViewBag.Highlight as string;
+    var today = TutorConnect.Helpers.Clock.Today;
+    var groups = Model.GroupBy(a => a.CreatedAt.Date == today ? "Today" : a.CreatedAt.Date == today.AddDays(-1) ? "Yesterday"
+                     : a.CreatedAt.Date > today.AddDays(-7) ? "This week" : "Earlier").ToList();
+    Func<string, string> iconFor = msg =>
+    {
+        var m = (msg ?? "").ToLowerInvariant();
+        if (m.Contains("payment") || m.Contains("paid") || m.Contains("payout")) return "fa-money-bill-wave";
+        if (m.Contains("tutorial") || m.Contains("checked in")) return "fa-chalkboard-user";
+        if (m.Contains("session") || m.Contains("booking")) return "fa-calendar-check";
+        if (m.Contains("material") || m.Contains("content")) return "fa-folder-open";
+        if (m.Contains("announcement")) return "fa-bullhorn";
+        if (m.Contains("application")) return "fa-file-signature";
+        if (m.Contains("banking")) return "fa-building-columns";
+        if (m.Contains("password") || m.Contains("profile")) return "fa-user-gear";
+        return "fa-bell";
+    };
+}
+<div class="page-head">
+    <div><h1>Notifications</h1><p>Everything that's happened on your account. Click one to go to its page.</p></div>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="card"><div class="empty"><i class="fa-regular fa-bell"></i><p>No notifications yet.</p></div></div>
+}
+@foreach (var g in groups)
+{
+    <h2 class="notif-group">@g.Key</h2>
+    <div class="card mb">
+        <ul class="list notif-list">
+            @foreach (var a in g)
+            {
+                var link = links[a.ActivityId];
+                var hasPage = link != TutorConnect.Services.NotificationLinks.Fallback;
+                <li class="notif-row @(a.IsUnread ? "is-new" : null) @(highlight == a.ActivityId.ToString() ? "is-highlight" : null)" id="n@(a.ActivityId)">
+                    <span class="stat-icon"><i class="fa-solid @iconFor(a.Message)"></i></span>
+                    <div class="list-main">
+                        <div class="notif-msg">@a.Message</div>
+                        <div class="list-meta">@a.CreatedAt.ToString("dddd d MMMM yyyy, HH:mm") (SAST), @Ui.Ago(a.CreatedAt)@if (a.IsUnread) { <span class="badge badge-info" style="margin-left:6px">New</span> }</div>
+                    </div>
+                    @if (hasPage)
+                    {
+                        <a class="btn btn-secondary btn-sm" href="@Url.Content("~" + link)">Open<i class="fa-solid fa-arrow-right" style="margin-left:4px"></i></a>
+                    }
+                </li>
+            }
+        </ul>
+    </div>
+}

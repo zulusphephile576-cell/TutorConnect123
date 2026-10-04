@@ -1,0 +1,119 @@
+﻿@model TutorConnect.Services.DatabaseSetup.Status
+@{
+    ViewBag.Title = "Database setup";
+    var log = TempData["SetupLog"] as List<string>;
+    var hasData = Model.TablesInstalled && Model.UserCount > 0;
+    var checks = new[]
+    {
+        new { Ok = Model.ScriptsFolder != null, Label = "SQL scripts found", Detail = Model.ScriptsFolder ?? "Put the Database folder next to the TutorConnect web project folder." },
+        new { Ok = Model.ServerReachable, Label = "SQL Server reachable", Detail = Model.ServerReachable ? Model.Server : (Model.ServerError ?? "Not checked") },
+        new { Ok = Model.DatabaseExists, Label = "Database \"" + Model.Database + "\" exists", Detail = Model.DatabaseExists ? "Found on " + Model.Server : "The installer creates it for you." },
+        new { Ok = Model.TablesInstalled, Label = "Tables installed", Detail = Model.TablesInstalled ? Model.UserCount + " user accounts" : "Created by 01_Schema.sql" },
+        new { Ok = Model.ProceduresInstalled, Label = "Stored procedures installed", Detail = Model.ProceduresInstalled ? "All present and up to date" : "Created by 02_StoredProcedures.sql" },
+        new { Ok = Model.ColumnsCurrent, Label = "Database is the latest version", Detail = Model.ColumnsCurrent ? "Includes profile and notification columns" : "Added by 04_Upgrade.sql" }
+    };
+}
+<div class="setup">
+    <div class="page-head">
+        <div>
+            <h1>Set up the database</h1>
+            <p>TutorConnect needs a SQL Server database before anyone can sign in. This page checks your connection and can install everything in one step.</p>
+        </div>
+    </div>
+
+    @if (Model.Ready)
+    {
+        <div class="alert alert-success"><i class="fa-solid fa-circle-check"></i><div class="alert-body"><strong>Everything's ready.</strong> The database is installed and the app can use it. <a href="@Url.Action("Login", "Account")">Go to sign in</a></div></div>
+    }
+
+    <div class="grid grid-aside">
+        <div class="stack">
+            <div class="card">
+                <div class="card-head"><div><h2>Checklist</h2><p>Refresh this page after changing anything.</p></div><a href="@Url.Action("Index")"><i class="fa-solid fa-rotate-right"></i> Check again</a></div>
+                <ul class="list">
+                    @foreach (var c in checks)
+                    {
+                        <li class="list-item">
+                            <span class="stat-icon @(c.Ok ? "success" : "danger")"><i class="fa-solid @(c.Ok ? "fa-check" : "fa-xmark")"></i></span>
+                            <div class="list-main"><div class="list-title">@c.Label</div><div class="list-meta" style="word-break:break-word">@c.Detail</div></div>
+                        </li>
+                    }
+                </ul>
+            </div>
+
+            @if (log != null)
+            {
+                <div class="card">
+                    <div class="card-head"><h2>What the installer did</h2></div>
+                    <ul class="list">@foreach (var l in log) { <li class="list-item"><i class="fa-solid fa-check" style="color:var(--success)"></i><div class="list-main">@l</div></li> }</ul>
+                </div>
+            }
+
+            @if (!Model.ServerReachable)
+            {
+                <div class="card">
+                    <div class="card-head"><div><h2>Can't reach SQL Server?</h2><p>The connection string in Web.config points at <b>@Model.Server</b>.</p></div></div>
+                    <div class="card-body">
+                        <ol class="steps">
+                            <li><b>Check LocalDB is installed.</b> Open a Command Prompt and run <code>sqllocaldb info</code>. If you see <code>MSSQLLocalDB</code>, run <code>sqllocaldb start MSSQLLocalDB</code>. If the command isn't found, install it from the Visual Studio Installer (Individual components, "SQL Server Express LocalDB").</li>
+                            <li><b>Using SQL Server Express instead?</b> Change the connection string's Data Source to <code>.\SQLEXPRESS</code>.</li>
+                            <li><b>Using a full SQL Server?</b> Use its server name, for example <code>localhost</code> or <code>YOUR-PC\MSSQLSERVER01</code>, the same name you type into SSMS.</li>
+                            <li>Save Web.config, then come back and press "Check again".</li>
+                        </ol>
+                        <p class="label" style="margin:16px 0 8px">Ready-made connection strings</p>
+                        <div class="stack" style="gap:8px">
+                            @foreach (var cs in new[] {
+                                "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=TutorConnect;Integrated Security=True",
+                                "Data Source=.\\SQLEXPRESS;Initial Catalog=TutorConnect;Integrated Security=True",
+                                "Data Source=localhost;Initial Catalog=TutorConnect;Integrated Security=True" })
+                            {
+                                <div class="copy-row"><code>@cs</code><button type="button" class="btn btn-ghost btn-sm" data-copy="@cs"><i class="fa-regular fa-copy"></i>Copy</button></div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="stack" style="align-self:start">
+        @if (Model.NeedsUpgrade)
+        {
+            <div class="card" style="border-color:var(--primary-line)">
+                <div class="card-head"><div><h2>Update the database</h2><p>Your database is from an older version. Updating adds what's new and keeps every account and record.</p></div></div>
+                @using (Html.BeginForm("Upgrade", "Setup", FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="card-body">
+                        <button type="submit" class="btn btn-primary btn-lg btn-block"><i class="fa-solid fa-arrows-rotate"></i>Update and keep my data</button>
+                    </div>
+                }
+            </div>
+        }
+        <div class="card">
+            <div class="card-head"><div><h2>@(Model.Ready || Model.NeedsUpgrade ? "Reinstall from scratch" : "Install")</h2><p>Runs the three scripts in the Database folder, in order.</p></div></div>
+            @using (Html.BeginForm("Install", "Setup", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <div class="card-body">
+                    <label class="check">
+                        <span class="switch"><input type="checkbox" name="includeDemoData" value="true" checked /><span></span></span>
+                        <span><b>Include demo data</b><br /><span class="muted small">Courses, modules, demo student, tutor and lecturer accounts, open slots and a tutorial, so you can try every role straight away.</span></span>
+                    </label>
+                    <input type="hidden" name="includeDemoData" value="false" />
+                    @if (hasData)
+                    {
+                        <label class="check">
+                            <input type="checkbox" name="confirmWipe" value="true" />
+                            <span><b>Erase the existing data</b><br /><span class="muted small">This database has @Model.UserCount accounts. Reinstalling deletes everything in it.</span></span>
+                        </label>
+                    }
+                    <button type="submit" class="btn btn-primary btn-lg btn-block" style="margin-top:14px" @(Model.ServerReachable && Model.ScriptsFolder != null ? null : "disabled")>
+                        <i class="fa-solid fa-database"></i>@(Model.Ready ? "Reinstall database" : "Install database")
+                    </button>
+                    <p class="small muted" style="margin:12px 0 0">After installing, sign in as <code>admin@@tutorconnect.ac.za</code> with <code>Admin@@123</code>. With demo data you can also use <code>student@@tutorconnect.ac.za</code>, <code>tutor@@&hellip;</code> and <code>lecturer@@&hellip;</code> with <code>Password@@123</code>.</p>
+                </div>
+            }
+        </div>
+        </div>
+    </div>
+</div>

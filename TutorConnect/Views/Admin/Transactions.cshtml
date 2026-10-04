@@ -1,0 +1,71 @@
+﻿@model TransactionsViewModel
+@{
+    ViewBag.Title = "Transactions";
+    Func<string, decimal> money = k => Model.Summary.ContainsKey(k) && Model.Summary[k] != null ? Convert.ToDecimal(Model.Summary[k]) : 0m;
+    var pendingCheckouts = Model.Summary.ContainsKey("PendingCheckouts") && Model.Summary["PendingCheckouts"] != null ? Convert.ToInt32(Model.Summary["PendingCheckouts"]) : 0;
+}
+<div class="page-head">
+    <div><h1>Transactions</h1><p>Every PayFast payment and the tutor payout it triggered. Payouts run automatically; retry is only needed if a provider call failed.</p></div>
+</div>
+
+<div class="stats mb">
+    <div class="stat feature"><div class="stat-top">Collected<span class="stat-icon success"><i class="fa-solid fa-arrow-down"></i></span></div><div class="stat-value">@Ui.Money(money("Collected"))</div></div>
+    <div class="stat"><div class="stat-top">Paid out<span class="stat-icon"><i class="fa-solid fa-arrow-up"></i></span></div><div class="stat-value">@Ui.Money(money("PaidOut"))</div></div>
+    <div class="stat"><div class="stat-top">Outstanding payouts<span class="stat-icon warning"><i class="fa-solid fa-hourglass-half"></i></span></div><div class="stat-value">@Ui.Money(money("Outstanding"))</div></div>
+    <div class="stat"><div class="stat-top">Unfinished checkouts<span class="stat-icon info"><i class="fa-solid fa-cart-shopping"></i></span></div><div class="stat-value">@pendingCheckouts</div><div class="stat-note">Students who left PayFast before paying</div></div>
+</div>
+
+<div class="card">
+    <div class="table-tools" data-filter-table="#tx">
+        <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Search reference, student or tutor" aria-label="Search transactions" /></div>
+        <select data-filter-attr="status" aria-label="Filter by payment status" style="width:auto">
+            <option value="">All payments</option><option>Complete</option><option>Pending</option><option>Cancelled</option><option>Failed</option>
+        </select>
+        <select data-filter-attr="payout" aria-label="Filter by payout status" style="width:auto">
+            <option value="">All payouts</option><option>Sent</option><option>Queued</option><option value="NoBankDetails">Awaiting bank details</option><option>Failed</option>
+        </select>
+    </div>
+    <div class="table-wrap">
+        <table class="table" id="tx">
+            <thead><tr><th>Reference</th><th>Student</th><th>Tutor</th><th>Module</th><th class="right">Amount</th><th>Payment</th><th>Payout</th><th class="right"><span class="sr-only">Actions</span></th></tr></thead>
+            <tbody>
+                @foreach (var p in Model.Payments)
+                {
+                    <tr data-status="@p.Status" data-payout="@p.PayoutStatus">
+                        <td><span class="mono small">@p.PaymentRef</span><div class="small muted">@Ui.DateTime(p.CreatedAt)</div></td>
+                        <td>@p.StudentName</td>
+                        <td>@p.TutorName@if (p.AccountLast4 != null) { <div class="small muted">Account ending @p.AccountLast4</div> }</td>
+                        <td><span class="tag">@p.ModuleCode</span><div class="small muted">@p.Hours h &times; @Ui.Money(p.HourlyRate)</div></td>
+                        <td class="right mono">@Ui.Money(p.Amount)</td>
+                        <td>@Ui.Badge(p.Status)
+                            @if (!string.IsNullOrEmpty(p.PayerBank)) { <div class="small muted">@(p.PaymentMethod ?? "EFT"), @p.PayerBank •••• @p.PayerAccountLast4</div> }
+                            @if (p.PfPaymentId != null) { <div class="small muted mono">@p.PfPaymentId</div> }</td>
+                        <td>
+                            @if (p.PayoutStatus == null) { <span class="muted small">@(p.Status == "Complete" ? "Not created" : "Not applicable")</span> }
+                            else
+                            {
+                                @Ui.Badge(p.PayoutStatus)
+                                if (p.PayoutReference != null) { <div class="small muted mono">@p.PayoutReference</div> }
+                                if (p.PayoutMessage != null && p.PayoutStatus != "Sent") { <div class="small muted" style="max-width:220px">@p.PayoutMessage</div> }
+                            }
+                        </td>
+                        <td>
+                            <div class="actions">
+                                @if (p.Status == "Complete" && p.PayoutStatus != "Sent")
+                                {
+                                    using (Html.BeginForm("RetryPayout", "Admin", new { paymentId = p.PaymentId }, FormMethod.Post))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-secondary btn-sm">Retry payout</button>
+                                    }
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+                <tr class="no-results"><td colspan="8"><div class="empty">Nothing matches your filters.</div></td></tr>
+            </tbody>
+        </table>
+    </div>
+    @if (Model.Payments.Count == 0) { <div class="empty"><i class="fa-solid fa-receipt"></i><p>No payments yet.</p></div> }
+</div>

@@ -1,0 +1,38 @@
+﻿@model CourseFormViewModel
+@{
+    ViewBag.Title = "New course";
+}
+<a class="back-link" href="@Url.Action("Courses")"><i class="fa-solid fa-arrow-left"></i>Courses</a>
+<div class="page-head">
+    <div><h1>New course</h1><p>Choose where the course belongs, then create it with up to eight modules in one go. If a module code already exists, it's linked rather than duplicated.</p></div>
+</div>
+
+@using (Html.BeginForm("CreateCourse", "Admin", FormMethod.Post, new { novalidate = "novalidate" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(false, "", new { @class = "alert alert-error" })
+    <div class="stack">
+        <div class="card">
+            <div class="card-head"><div><h2>Course</h2><p>Every course belongs to a department. Students see it only after choosing that faculty and department.</p></div></div>
+            <div class="card-body form-grid">
+                @Html.Partial("_CourseCascade", new CourseCascadeModel { Faculties = Model.Faculties, Departments = Model.Departments,
+                    FacultyId = Model.FacultyId, DepartmentId = Model.DepartmentId, IncludeCourse = false })
+                <div class="field"><label for="Code">Code</label>@Html.TextBoxFor(m => m.Code, new { maxlength = "20", placeholder = "e.g. BSCIT" })@Html.ValidationMessageFor(m => m.Code)</div>
+                <div class="field"><label for="Name">Name</label>@Html.TextBoxFor(m => m.Name, new { maxlength = "150" })@Html.ValidationMessageFor(m => m.Name)</div>
+                <div class="field full"><label for="Description">Description <span class="hint">Optional</span></label>@Html.TextAreaFor(m => m.Description, new { maxlength = "500", style = "min-height:70px" })</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><div><h2>Modules</h2><p>Add as many as the course needs: a new row appears each time you fill one in. Year and semester decide when students take it.</p></div></div>
+            <div class="card-body">
+                @Html.Partial("_ModuleRows", Model.Modules, new ViewDataDictionary { { "Prefix", "Modules" } })
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a class="btn btn-ghost" href="@Url.Action("Courses")">Cancel</a>
+            <button type="submit" class="btn btn-primary">Create course</button>
+        </div>
+    </div>
+}

@@ -1,0 +1,15 @@
+﻿@model System.Web.Mvc.HandleErrorInfo
+@{
+    ViewBag.Title = "Something went wrong";
+    Layout = "~/Views/Shared/_AuthLayout.cshtml";
+    var message = ViewData["Message"] as string;
+}
+<div class="card"><div class="card-body" style="padding:32px">
+    <div class="stat-icon danger" style="margin-bottom:16px"><i class="fa-solid fa-triangle-exclamation"></i></div>
+    <h2>That page couldn't load</h2>
+    <p class="text-2" style="margin-top:8px">@(message ?? "An error occurred and has been logged. Try again, or go back to your dashboard.")</p>
+    <div class="row" style="margin-top:18px">
+        <a class="btn btn-primary" href="@Url.Action("Index", "Home")">Go to my dashboard</a>
+        <a class="btn btn-secondary" href="javascript:history.back()">Go back</a>
+    </div>
+</div></div>

@@ -1,0 +1,6 @@
+﻿@model List<AttendanceRecord>
+@{
+    ViewBag.Title = "Attendance";
+}
+<div class="page-head"><div><h1>Attendance</h1><p>Every session, tutorial and class register for the modules you lecture.</p></div></div>
+@Html.Partial("_AttendanceTable", Model)

@@ -1,0 +1,33 @@
+﻿@model List<Module>
+@{
+    ViewBag.Title = "My modules";
+}
+<div class="page-head">
+    <div><h1>My modules</h1><p>Registered automatically from your course and year of study. Speak to an administrator if something is missing.</p></div>
+</div>
+@if (Model.Count == 0)
+{
+    <div class="card"><div class="empty"><i class="fa-solid fa-book"></i><p>No modules are linked to your course for your year yet.</p></div></div>
+}
+else
+{
+    <div class="grid grid-3">
+        @foreach (var m in Model)
+        {
+            <div class="card tutor-card">
+                <div class="card-body">
+                    <div class="spread"><span class="tag">@m.Code</span><span class="small muted">Year @m.YearLevel</span></div>
+                    <h3 style="margin:10px 0 6px">@m.Name</h3>
+                    @if (!string.IsNullOrEmpty(m.Description)) { <p class="small text-2">@m.Description</p> }
+                </div>
+                <div class="card-foot">
+                    <div class="small"><span class="muted">Lecturer:</span> @(m.LecturerName ?? "Not assigned")</div>
+                    <div class="spread small" style="margin-top:4px">
+                        <span><span class="muted">Tutor:</span> @(m.TutorName ?? "Not assigned yet")</span>
+                        @if (m.TutorId.HasValue) { <a href="@Url.Action("Book", new { tutorId = m.TutorId, moduleId = m.ModuleId })">Book</a> }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

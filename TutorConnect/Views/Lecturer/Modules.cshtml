@@ -1,0 +1,67 @@
+﻿@model List<ModuleOverview>
+@{
+    ViewBag.Title = "My modules";
+    var tutors = (List<ModuleTutor>)ViewBag.Tutors;
+}
+<div class="page-head">
+    <div><h1>My modules</h1><p>The modules you lecture, with their tutors and how they're going.</p></div>
+    <div class="page-actions"><a class="btn btn-primary" href="@Url.Action("AssignTutors")"><i class="fa-solid fa-user-plus"></i>Assign tutors</a></div>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="card"><div class="empty"><i class="fa-solid fa-book"></i><p>No modules are assigned to you yet. An administrator assigns lecturers to modules.</p></div></div>
+}
+<div class="module-cards">
+    @foreach (var m in Model)
+    {
+        var mine = tutors.Where(t => t.ModuleId == m.ModuleId).ToList();
+        var open = Math.Max(0, m.TutorsNeeded - m.TutorCount);
+        <div class="card module-card">
+            <div class="card-head">
+                <div>
+                    <h2><span class="tag">@m.Code</span> @m.Name</h2>
+                    <p>Year @m.YearLevel <span class="sem-chip sem-@m.Semester" style="margin-left:6px">Semester @m.Semester</span>@if (!string.IsNullOrEmpty(m.Courses)) { <span class="muted"> in @m.Courses</span> }</p>
+                </div>
+                @if (open > 0) { <span class="badge badge-warning">@open tutor @(open == 1 ? "position" : "positions") open</span> }
+                else { <span class="badge badge-success">Tutors filled</span> }
+            </div>
+            <div class="card-body">
+                <div class="mini-stats">
+                    <div><b>@m.StudentCount</b><span>@(m.StudentCount == 1 ? "student" : "students")</span></div>
+                    <div><b>@m.TutorCount of @m.TutorsNeeded</b><span>tutors</span></div>
+                    <div><b>@m.TutorialCount</b><span>@(m.TutorialCount == 1 ? "tutorial" : "tutorials")</span></div>
+                    <div><b>@(m.AttendanceRate.HasValue ? Ui.Percent(m.AttendanceRate.Value) : "–")</b><span>attendance</span></div>
+                </div>
+                @if (m.ContentToReview > 0)
+                {
+                    <a class="alert alert-info" style="margin:14px 0 0;display:flex" href="@Url.Action("Content")"><i class="fa-solid fa-folder-open"></i><div class="alert-body">@m.ContentToReview tutor @(m.ContentToReview == 1 ? "upload is" : "uploads are") waiting for your review before students see @(m.ContentToReview == 1 ? "it" : "them").</div></a>
+                }
+            </div>
+            @if (mine.Count == 0)
+            {
+                <div class="empty" style="padding:14px 20px;border-top:1px solid var(--border)"><p style="margin:0">No tutors yet. <a href="@Url.Action("AssignTutors")">Assign one</a>.</p></div>
+            }
+            else
+            {
+                <div class="table-wrap" style="border-top:1px solid var(--border)">
+                    <table class="table">
+                        <thead><tr><th>Tutor</th><th>Year</th><th class="right">Open slots</th><th class="right">Sessions done</th></tr></thead>
+                        <tbody>
+                            @foreach (var t in mine)
+                            {
+                                <tr><td><div class="person">@Ui.Avatar(t.TutorName, "sm")<div><div>@t.TutorName</div><div class="small muted">@t.TutorEmail</div></div></div></td>
+                                    <td>@t.YearOfStudy</td><td class="right mono">@t.OpenSlots</td><td class="right mono">@t.CompletedSessions</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            <div class="card-foot module-actions">
+                <a class="btn btn-secondary btn-sm" href="@Url.Action("Content")"><i class="fa-solid fa-folder-open"></i>Content (@m.ContentCount)</a>
+                <a class="btn btn-ghost btn-sm" href="@Url.Action("Tutorials")"><i class="fa-solid fa-chalkboard-user"></i>Tutorials</a>
+                <a class="btn btn-ghost btn-sm" href="@Url.Action("Attendance")"><i class="fa-solid fa-clipboard-check"></i>Attendance</a>
+            </div>
+        </div>
+    }
+</div>

@@ -1,0 +1,87 @@
+﻿@model List<TutorConnect.Models.User>
+@{
+    ViewBag.Title = "Users";
+    var role = ViewBag.Role as string;
+    var tabs = new[] { "", "Student", "Tutor", "Lecturer", "Admin" };
+    var deletionRequests = Model.Where(x => x.DeletionRequestedAt.HasValue && x.IsActive).ToList();
+}
+<div class="page-head">
+    <div><h1>Users</h1><p>Edit or remove accounts. Accounts with payment history are deactivated rather than deleted, so financial records stay complete.</p></div>
+    <div class="page-actions"><a class="btn btn-primary" href="@Url.Action("CreateLecturer")"><i class="fa-solid fa-user-plus"></i>Add lecturer</a></div>
+</div>
+
+@if (deletionRequests.Count > 0)
+{
+    <div class="card mb" style="border-color:var(--warning)">
+        <div class="card-head"><div><h2><i class="fa-solid fa-user-xmark" style="color:var(--warning)"></i> Deletion requests (POPIA)</h2><p>These people asked for their account to be deleted. Process each request promptly.</p></div></div>
+        <ul class="list">
+            @foreach (var d in deletionRequests)
+            {
+                <li class="list-item">
+                    @Ui.Avatar(d.FullName, "sm")
+                    <div class="list-main"><div class="list-title">@d.FullName <span class="muted small">@d.Role</span></div><div class="list-meta">@d.Email, requested @Ui.Ago(d.DeletionRequestedAt.Value)</div></div>
+                    @using (Html.BeginForm("DeleteUser", "Admin", new { id = d.UserId, returnRole = role }, FormMethod.Post, new { data_confirm = "Delete " + d.FullName + " as requested? If they have payment history they'll be deactivated instead." }))
+                    {
+                        @Html.AntiForgeryToken()<button type="submit" class="btn btn-danger btn-sm">Process request</button>
+                    }
+                </li>
+            }
+        </ul>
+    </div>
+}
+
+<nav class="tabs" aria-label="Filter by role">
+    @foreach (var t in tabs)
+    {
+        <a class="tab @(role == t || (string.IsNullOrEmpty(role) && t == "") ? "active" : null)" href="@Url.Action("Users", new { role = t == "" ? null : t })">@(t == "" ? "Everyone" : t + "s")</a>
+    }
+</nav>
+
+<div class="card">
+    <div class="table-tools" data-filter-table="#users">
+        <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Search name, email or student number" aria-label="Search users" /></div>
+        @Html.Partial("_CatalogFilter", (TutorConnect.Services.CourseCatalog)ViewBag.Catalog)
+        <select data-filter-attr="active" aria-label="Filter by status" style="width:auto"><option value="">Active and inactive</option><option value="yes">Active</option><option value="no">Inactive</option></select>
+        <span class="muted small" style="margin-left:auto"><span data-filter-count>@Model.Count of @Model.Count</span> accounts</span>
+    </div>
+    <div class="table-wrap">
+        <table class="table" id="users">
+            <thead><tr><th>Name</th><th>Role</th><th>Email</th><th>Course / year</th><th>Status</th><th class="right"><span class="sr-only">Actions</span></th></tr></thead>
+            <tbody>
+                @foreach (var u in Model)
+                {
+                    <tr data-active="@(u.IsActive ? "yes" : "no")" data-faculties="@u.FacultyIds" data-departments="@u.DepartmentIds" data-courses="@u.CourseIds">
+                        <td><div class="person">@Ui.Avatar(u.FullName, "sm")<div><div>@u.FullName</div>@if (!string.IsNullOrEmpty(u.StudentNumber)) { <div class="small muted">@u.StudentNumber</div> }</div></div></td>
+                        <td>@u.Role</td>
+                        <td>@u.Email</td>
+                        <td>@(u.CourseName ?? "\u2013")@(u.YearOfStudy.HasValue ? ", year " + u.YearOfStudy : "")@if (u.DepartmentName != null) { <div class="small muted">@u.DepartmentName</div> }</td>
+                        <td>
+                            @(u.IsActive ? Html.Raw("<span class=\"badge badge-success\">Active</span>") : Html.Raw("<span class=\"badge badge-muted\">Inactive</span>"))
+                            @if (u.IsLockedOut) { <span class="badge badge-danger" title="Locked until @Ui.Time(u.LockoutUntil.Value) SAST">Locked</span> }
+                            @if (u.DeletionRequestedAt.HasValue && u.IsActive) { <span class="badge badge-warning">Deletion requested</span> }
+                        </td>
+                        <td>
+                            <div class="actions">
+                                @if (u.IsLockedOut)
+                                {
+                                    using (Html.BeginForm("UnlockUser", "Admin", new { id = u.UserId, returnRole = role }, FormMethod.Post))
+                                    {
+                                        @Html.AntiForgeryToken()<button type="submit" class="btn btn-success btn-sm">Unlock</button>
+                                    }
+                                }
+                                <a class="btn btn-primary btn-sm" href="@Url.Action("UserDetails", new { id = u.UserId })"><i class="fa-regular fa-eye"></i>View</a>
+                                <a class="btn btn-secondary btn-sm" href="@Url.Action("EditUser", new { id = u.UserId })">Edit</a>
+                                @using (Html.BeginForm("DeleteUser", "Admin", new { id = u.UserId, returnRole = role }, FormMethod.Post, new { data_confirm = "Delete " + u.FullName + "? If they have payment history they'll be deactivated instead." }))
+                                {
+                                    @Html.AntiForgeryToken()<button type="submit" class="btn btn-ghost btn-sm" aria-label="Delete @u.FullName"><i class="fa-regular fa-trash-can"></i></button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+                <tr class="no-results"><td colspan="6"><div class="empty">No users match.</div></td></tr>
+            </tbody>
+        </table>
+    </div>
+    @if (Model.Count == 0) { <div class="empty"><p>No accounts in this group.</p></div> }
+</div>

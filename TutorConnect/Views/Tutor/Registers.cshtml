@@ -1,0 +1,59 @@
+﻿@model List<ClassRegister>
+@{
+    ViewBag.Title = "Class registers";
+    var assignments = (List<TutorAssignment>)ViewBag.Assignments;
+}
+<div class="page-head">
+    <div><h1>Class registers</h1><p>Take attendance for any class that isn't a scheduled tutorial, such as a revision drop-in. The list of students comes from the module and year you choose.</p></div>
+</div>
+
+<div class="grid grid-aside">
+    <div class="card">
+        <div class="card-head"><h2>Your registers</h2></div>
+        @if (Model.Count == 0)
+        {
+            <div class="empty"><i class="fa-solid fa-clipboard-list"></i><p>No registers yet.</p></div>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table class="table">
+                    <thead><tr><th>Register</th><th>Module</th><th>Date</th><th>Attended</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var r in Model)
+                        {
+                            <tr>
+                                <td><a href="@Url.Action("ClassRegister", new { id = r.RegisterId })">@r.Title</a></td>
+                                <td><span class="tag">@r.ModuleCode</span> <span class="small muted">Y@r.YearOfStudy</span></td>
+                                <td class="nowrap">@Ui.Date(r.RegisterDate)</td>
+                                <td class="mono">@r.PresentCount / @r.EnrolledCount</td>
+                                <td class="right"><a class="btn btn-ghost btn-sm" href="@Url.Action("ClassRegister", new { id = r.RegisterId })">Open</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    <div class="card" style="align-self:start">
+        <div class="card-head"><h2>New register</h2></div>
+        @if (assignments.Count == 0)
+        {
+            <div class="card-body">@Html.Partial("_NoAssignments")</div>
+        }
+        else
+        {
+            using (Html.BeginForm("CreateRegister", "Tutor", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <div class="card-body stack" style="gap:14px">
+                    <div class="field"><label for="assignment">Module and year</label><select id="assignment" name="assignment" required>@Html.Partial("_AssignmentOptions", assignments)</select></div>
+                    <div class="field"><label for="title">Title</label><input type="text" id="title" name="title" maxlength="150" placeholder="e.g. Exam prep drop-in" required /></div>
+                    <div class="field"><label for="registerDate">Date</label><input type="date" id="registerDate" name="registerDate" value="@TutorConnect.Helpers.Clock.Today.ToString("yyyy-MM-dd")" required /></div>
+                    <button type="submit" class="btn btn-primary btn-block">Create register</button>
+                </div>
+            }
+        }
+    </div>
+</div>

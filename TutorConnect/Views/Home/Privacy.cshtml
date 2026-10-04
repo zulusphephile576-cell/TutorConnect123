@@ -1,0 +1,90 @@
+﻿@{
+    ViewBag.Title = "Privacy notice";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+}
+<section class="lp-section" style="padding-top:130px">
+    <div class="lp-wrap privacy">
+        <p class="lp-kicker" style="background:var(--primary-soft);color:var(--primary-ink);border-color:var(--primary-line)"><i class="fa-solid fa-circle" style="color:var(--success)"></i>Protection of Personal Information Act 4 of 2013 (POPIA)</p>
+        <h1>Privacy notice</h1>
+        <p class="lead">This notice explains what personal information TutorConnect collects, why, who can see it, and the rights you have over it. Last updated @TutorConnect.Helpers.Clock.Today.ToString("d MMMM yyyy").</p>
+
+        <div class="privacy-grid">
+            <article class="card"><div class="card-body">
+                <h2><i class="fa-solid fa-list-check"></i>What we collect</h2>
+                <ul>
+                    <li><b>Identity and contact:</b> name, university and personal email, student number, mobile number, date of birth, gender (optional), campus.</li>
+                    <li><b>Studies:</b> course, year of study and registered modules.</li>
+                    <li><b>Activity:</b> bookings, tutorial and register attendance, announcements you receive, and in-app notifications.</li>
+                    <li><b>Tutor applications:</b> module mark, motivation, student card, academic transcript and CV.</li>
+                    <li><b>Payments:</b> amounts and PayFast references. Card details are handled by PayFast and never reach TutorConnect.</li>
+                    <li><b>Tutors' banking details:</b> stored encrypted; only the last four digits are ever shown.</li>
+                    <li><b>Emergency contact</b> (optional).</li>
+                </ul>
+            </div></article>
+
+            <article class="card"><div class="card-body">
+                <h2><i class="fa-solid fa-bullseye"></i>Why we use it</h2>
+                <ul>
+                    <li>To match you with tutors for your own modules and year of study.</li>
+                    <li>To take payment for sessions and pay tutors.</li>
+                    <li>To keep attendance registers that lecturers use to support students.</li>
+                    <li>To assess tutor applications fairly.</li>
+                    <li>To send reminders and notifications you've chosen to receive.</li>
+                </ul>
+                <p class="muted small">We don't sell your information, show you adverts, or use it for anything unrelated to tutoring.</p>
+            </div></article>
+
+            <article class="card"><div class="card-body">
+                <h2><i class="fa-solid fa-user-lock"></i>Who can see it</h2>
+                <ul>
+                    <li><b>Your tutor</b> sees your name, student number and email for sessions and tutorials you're part of.</li>
+                    <li><b>Lecturers</b> see attendance and progress for the modules they teach, and applications assigned to them.</li>
+                    <li><b>Administrators</b> manage accounts, applications and payments.</li>
+                    <li><b>PayFast</b> processes payments; <b>email providers</b> deliver messages.</li>
+                </ul>
+            </div></article>
+
+            <article class="card"><div class="card-body">
+                <h2><i class="fa-solid fa-shield-halved"></i>How we protect it</h2>
+                <ul>
+                    <li>Passwords are stored only as BCrypt hashes.</li>
+                    <li>Bank account numbers are encrypted; API tokens are stored only as SHA-256 hashes.</li>
+                    <li>Every page checks your role, and uploaded documents can only be opened by staff who need them.</li>
+                    <li>Accounts lock for 15 minutes after five failed sign-in attempts.</li>
+                    <li>Every form is protected against cross-site request forgery.</li>
+                </ul>
+            </div></article>
+
+            <article class="card"><div class="card-body">
+                <h2><i class="fa-solid fa-wand-magic-sparkles"></i>The AI study assistant</h2>
+                <ul>
+                    <li>Questions you type into the assistant are sent to <b>Anthropic</b>, the company that provides the Claude AI model, to generate an answer.</li>
+                    <li>We send only your question, the module and your year of study. We never send your name, student number, email or contact details.</li>
+                    <li>We record that a question was asked (time and module) to apply the hourly limit, not what you asked.</li>
+                    <li>Don't type personal information such as ID numbers or health details into the assistant.</li>
+                    <li>Using the assistant is optional.</li>
+                </ul>
+            </div></article>
+
+            <article class="card"><div class="card-body">
+                <h2><i class="fa-regular fa-clock"></i>How long we keep it</h2>
+                <p>For as long as your account is active. When you ask for deletion, your account is removed. If you've made or received payments, the payment records are kept, as financial record-keeping law requires, and your account is deactivated instead.</p>
+            </div></article>
+
+            <article class="card privacy-rights"><div class="card-body">
+                <h2><i class="fa-solid fa-scale-balanced"></i>Your rights</h2>
+                <p>Under POPIA you may:</p>
+                <ul>
+                    <li><b>Access</b> your information: <em>Settings, Privacy and your data, Download my data</em>.</li>
+                    <li><b>Correct</b> it: <em>Settings, Profile</em>, or ask an administrator.</li>
+                    <li><b>Ask for deletion</b>: <em>Settings, Privacy and your data, Request deletion</em>.</li>
+                    <li><b>Object or complain</b> to the Information Regulator of South Africa (inforegulator.org.za).</li>
+                </ul>
+            </div></article>
+        </div>
+        <div class="row" style="margin-top:28px">
+            <a class="btn btn-primary" href="@Url.Action("Register", "Account")">Create a student account</a>
+            <a class="btn btn-secondary" href="@Url.Action("Index", "Home")">Back to home</a>
+        </div>
+    </div>
+</section>

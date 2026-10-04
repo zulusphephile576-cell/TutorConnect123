@@ -1,0 +1,89 @@
+﻿@model List<ContentItem>
+@{
+    ViewBag.Title = "Course content";
+    var assignments = (List<TutorAssignment>)ViewBag.Assignments;
+    var toReview = Model.Where(c => c.UploaderRole == "Lecturer" && !c.IsReviewed).ToList();
+}
+<div class="page-head">
+    <div><h1>Course content</h1><p>Material for the modules you tutor. Mark lecturer uploads as reviewed once you've gone through them; your own uploads go to the lecturer for review.</p></div>
+</div>
+
+<div class="grid grid-aside">
+    <div class="stack">
+        @if (toReview.Count > 0)
+        {
+            <div class="alert alert-info"><i class="fa-solid fa-circle-info"></i><div class="alert-body">@toReview.Count lecturer @(toReview.Count == 1 ? "upload is" : "uploads are") waiting for your review.</div></div>
+        }
+        <div class="card">
+            <div class="table-tools" data-filter-table="#content">
+                <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Search title or module" aria-label="Search content" /></div>
+                <select data-filter-attr="year" aria-label="Filter by year of study" style="width:auto"><option value="">All years</option>@foreach (var y in assignments.Select(a => a.YearOfStudy).Distinct().OrderBy(y => y)) { <option value="@y">Year @y</option> }</select>
+                <select data-filter-attr="reviewed" aria-label="Filter by review" style="width:auto"><option value="">All</option><option value="no">Not reviewed</option><option value="yes">Reviewed</option></select>
+            </div>
+            <div class="table-wrap">
+                <table class="table" id="content">
+                    <thead><tr><th>Material</th><th>Module</th><th>Uploaded by</th><th>Review</th><th class="right"><span class="sr-only">Actions</span></th></tr></thead>
+                    <tbody>
+                        @foreach (var c in Model)
+                        {
+                            <tr data-reviewed="@(c.IsReviewed ? "yes" : "no")" data-year="@(c.YearOfStudy.HasValue ? c.YearOfStudy.Value.ToString() : "1,2,3,4,5,6,7")">
+                                <td><div class="list-title"><i class="fa-regular fa-file-lines muted"></i> @c.Title</div>@if (!string.IsNullOrEmpty(c.Description)) { <div class="small muted">@c.Description</div> }</td>
+                                <td><span class="tag">@c.ModuleCode</span>@if (c.YearOfStudy.HasValue) { <span class="small muted"> Y@c.YearOfStudy</span> }</td>
+                                <td><div>@(c.UploaderName ?? "Removed user")</div><div class="small muted">@c.UploaderRole, @Ui.Ago(c.UploadedAt)</div></td>
+                                <td>@(c.IsReviewed ? Html.Raw("<span class=\"badge badge-success\">Reviewed</span><div class=\"small muted\">" + HttpUtility.HtmlEncode(c.ReviewedByName) + "</div>") : Html.Raw("<span class=\"badge badge-warning\">Not reviewed</span>"))</td>
+                                <td>
+                                    <div class="actions">
+                                        <a class="btn btn-secondary btn-sm" href="@Url.Action("Content", "Files", new { id = c.ContentId })"><i class="fa-solid fa-download"></i>Open</a>
+                                        @if (!c.IsReviewed && c.UploaderRole == "Lecturer")
+                                        {
+                                            using (Html.BeginForm("ReviewContent", "Tutor", new { id = c.ContentId }, FormMethod.Post))
+                                            {
+                                                @Html.AntiForgeryToken()<button type="submit" class="btn btn-success btn-sm">Mark reviewed</button>
+                                            }
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        <tr class="no-results"><td colspan="5"><div class="empty">Nothing matches.</div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+            @if (Model.Count == 0)
+            {
+                <div class="empty"><i class="fa-regular fa-folder-open"></i><p>No material has been shared for your modules yet.</p></div>
+            }
+        </div>
+    </div>
+
+    <div class="card" style="align-self:start">
+        <div class="card-head"><h2>Share material</h2></div>
+        @if (assignments.Count == 0)
+        {
+            <div class="card-body">@Html.Partial("_NoAssignments")</div>
+        }
+        else
+        {
+            using (Html.BeginForm("UploadContent", "Tutor", FormMethod.Post, new { enctype = "multipart/form-data" }))
+            {
+                @Html.AntiForgeryToken()
+                <div class="card-body stack" style="gap:14px">
+                    <div class="field"><label for="contentYear">Year of study</label>
+                        <select id="contentYear" data-year-source="#assignment" required>
+                            <option value="">Choose a year</option>
+                            @foreach (var y in assignments.Select(a => a.YearOfStudy).Distinct().OrderBy(y => y)) { <option value="@y">Year @y</option> }
+                        </select></div>
+                    <div class="field"><label for="assignment">Module</label>
+                        <select id="assignment" name="assignment" required disabled>
+                            <option value="">Choose a year first</option>
+                            @foreach (var a in assignments) { <option value="@(a.ModuleId + "|" + a.YearOfStudy)" data-year="@a.YearOfStudy">@a.ModuleCode, @a.ModuleName</option> }
+                        </select></div>
+                    <div class="field"><label for="title">Title</label><input type="text" id="title" name="title" maxlength="150" required /></div>
+                    <div class="field"><label for="description">Description</label><textarea id="description" name="description" maxlength="1000" style="min-height:80px"></textarea></div>
+                    <div class="field"><label for="file">File</label><input type="file" id="file" name="file" required /><span class="hint">PDF, Office documents, images, text or ZIP, up to 10 MB.</span></div>
+                    <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-upload"></i>Upload</button>
+                </div>
+            }
+        }
+    </div>
+</div>

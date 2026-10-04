@@ -1,0 +1,111 @@
+﻿@model BankCheckoutViewModel
+@{
+    ViewBag.Title = "Secure payment";
+    var p = Model.Payment;
+    var tb = Model.TutorBanking;
+}
+<div class="pay">
+    <div class="pay-top">
+        <div class="pay-brand"><span class="brand-mark"><i class="fa-solid fa-graduation-cap"></i></span><div><b>TutorConnect</b><small>Secure payment</small></div></div>
+        <div class="pay-secure"><i class="fa-solid fa-building-columns"></i>Pay by bank (EFT)</div>
+    </div>
+
+    <div class="pay-grid">
+        <aside class="pay-summary">
+            <div class="pay-amount"><small>Amount due</small><b>@Ui.Money(p.Amount)</b></div>
+            <div class="summary-line"><span class="muted">Session</span><span><span class="tag">@p.ModuleCode</span> @p.ModuleName</span></div>
+            <div class="summary-line"><span class="muted">Tutor</span><span>@p.TutorName</span></div>
+            <div class="summary-line"><span class="muted">When</span><span>@Ui.DateTime(p.SessionStart)</span></div>
+            <div class="summary-line"><span class="muted">Duration</span><span>@p.Hours @(p.Hours == 1 ? "hour" : "hours") × @Ui.Money(p.HourlyRate)</span></div>
+            <div class="summary-line"><span class="muted">Reference</span><span class="mono small">@p.PaymentRef</span></div>
+            <a class="btn btn-secondary btn-sm btn-block" style="margin-top:14px" href="@Url.Action("Checkout", new { reference = p.PaymentRef })"><i class="fa-regular fa-credit-card"></i>Pay by card instead</a>
+            <a class="btn btn-ghost btn-sm btn-block" style="margin-top:6px" href="@Url.Action("Cancel", new { reference = p.PaymentRef })"><i class="fa-solid fa-xmark"></i>Cancel and go back</a>
+        </aside>
+
+        @using (Html.BeginForm("PayByBank", "Payment", new { reference = p.PaymentRef }, FormMethod.Post, new { @class = "pay-main", data_pay_form = "", autocomplete = "off" }))
+        {
+            @Html.AntiForgeryToken()
+            <ol class="pay-steps" aria-label="Payment steps">
+                <li data-step-dot="1" class="active"><span>1</span>Your bank</li>
+                <li data-step-dot="2"><span>2</span>Your account</li>
+                <li data-step-dot="3"><span>3</span>Review and pay</li>
+            </ol>
+
+            if (Model.Error != null)
+            {
+                <div class="alert alert-error" role="alert"><i class="fa-solid fa-circle-exclamation"></i><div class="alert-body">@Model.Error</div></div>
+            }
+
+            <section class="pay-step" data-step="1">
+                <h2>Choose your bank</h2>
+                <p class="muted">Pay straight from your bank account.</p>
+                <div class="bank-grid" role="radiogroup" aria-label="Your bank">
+                    @foreach (var b in Model.Banks)
+                    {
+                        <label class="bank-tile">
+                            <input type="radio" name="bankCode" value="@b.Code" data-branch="@b.BranchCode" data-bank-name="@b.Name" data-lengths="@string.Join(",", b.Lengths)" data-length-text="@b.LengthText" @(Model.BankCode == b.Code ? "checked" : null) />
+                            <span class="bank-tile-inner"><span class="bank-logo" style="background:@b.Tone">@b.Initials</span><span class="bank-name">@b.Name</span></span>
+                        </label>
+                    }
+                </div>
+                <div class="pay-actions"><span></span><button type="button" class="btn btn-primary btn-lg" data-next="2" disabled>Continue<i class="fa-solid fa-arrow-right" style="margin-left:4px"></i></button></div>
+            </section>
+
+            <section class="pay-step" data-step="2" hidden>
+                <h2>Your account at <span data-chosen-bank>your bank</span></h2>
+                <p class="muted">The account the payment comes from.</p>
+                <div class="form-grid">
+                    <div class="field full"><label for="accountHolder">Account holder</label><input type="text" id="accountHolder" name="accountHolder" value="@Model.AccountHolder" maxlength="80" placeholder="Name as it appears at your bank" /></div>
+                    <div class="field">
+                        <label for="accountType">Account type</label>
+                        <select id="accountType" name="accountType">
+                            @foreach (var t in TutorConnect.Services.SouthAfricanBanks.AccountTypes) { <option @(Model.AccountType == t ? "selected" : null)>@t</option> }
+                        </select>
+                    </div>
+                    <div class="field"><label for="branchCode">Branch code</label><input type="text" id="branchCode" readonly tabindex="-1" class="readonly" /></div>
+                    <div class="field full"><label for="accountNumber">Account number</label><input type="text" id="accountNumber" name="accountNumber" value="@Model.AccountNumber" inputmode="numeric" maxlength="20" placeholder="Account number" data-account-number /><span class="hint" data-account-hint></span></div>
+                </div>
+                <div class="pay-actions"><button type="button" class="btn btn-ghost" data-back="1"><i class="fa-solid fa-arrow-left"></i>Back</button><button type="button" class="btn btn-primary btn-lg" data-next="3">Continue<i class="fa-solid fa-arrow-right" style="margin-left:4px"></i></button></div>
+            </section>
+
+            <section class="pay-step" data-step="3" hidden>
+                <h2>Review and pay</h2>
+                <div class="transfer">
+                    <div class="transfer-party">
+                        <small>From</small>
+                        <b data-review-from-bank>–</b>
+                        <span data-review-from-holder>–</span>
+                        <span class="mono" data-review-from-number>–</span>
+                    </div>
+                    <div class="transfer-arrow" aria-hidden="true"><i class="fa-solid fa-arrow-right"></i><b>@Ui.Money(p.Amount)</b></div>
+                    <div class="transfer-party">
+                        <small>To your tutor</small>
+                        <b>@tb.BankName</b>
+                        <span>@tb.AccountHolder</span>
+                        <span class="mono">•••• •••• @tb.AccountLast4</span>
+                    </div>
+                </div>
+                <dl class="dl pay-dl">
+                    <dt>Paying</dt><dd>@p.TutorName, @tb.AccountType@(string.IsNullOrEmpty(tb.BranchCode) ? "" : ", branch " + tb.BranchCode)</dd>
+                    <dt>Beneficiary reference</dt><dd class="mono">@p.PaymentRef</dd>
+                    <dt>Amount</dt><dd><b>@Ui.Money(p.Amount)</b></dd>
+                </dl>
+                <label class="check">
+                    <input type="checkbox" data-authorise />
+                    <span>I authorise this payment of <b>@Ui.Money(p.Amount)</b> from my account to @p.TutorName for this tutoring session.</span>
+                </label>
+                <div class="pay-actions"><button type="button" class="btn btn-ghost" data-back="2"><i class="fa-solid fa-arrow-left"></i>Back</button><button type="submit" class="btn btn-primary btn-lg" data-pay disabled><i class="fa-solid fa-lock"></i>Pay @Ui.Money(p.Amount)</button></div>
+            </section>
+
+            <p class="pay-note"><i class="fa-solid fa-shield-halved"></i>TutorConnect will never ask for your online banking password, PIN or one-time PIN. Your account number is used only for this payment; your receipt shows the last four digits.</p>
+
+            <div class="pay-processing" data-processing hidden>
+                <div class="pay-processing-box">
+                    <span class="pay-spinner"></span>
+                    <b data-processing-text>Contacting your bank…</b>
+                    <small>Please don't close this page.</small>
+                </div>
+            </div>
+        }
+    </div>
+</div>

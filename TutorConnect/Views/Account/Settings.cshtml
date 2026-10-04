@@ -1,0 +1,206 @@
+﻿@model SettingsViewModel
+@{
+    ViewBag.Title = "Settings";
+    var pw = (ChangePasswordViewModel)ViewBag.PasswordModel ?? new ChangePasswordViewModel();
+    var u = Model.User;
+    var tokens = (ViewBag.Tokens as List<ApiTokenInfo>) ?? new List<ApiTokenInfo>();
+    var newToken = TempData["NewApiToken"] as string;
+    var apiBase = Request.Url.GetLeftPart(UriPartial.Authority) + Url.Content("~/api/v1");
+}
+<div class="page-head">
+    <div><h1>Settings</h1><p>Your profile, how TutorConnect looks, and how it contacts you.</p></div>
+</div>
+
+<div class="grid grid-aside">
+    <div class="stack">
+        <div class="card" id="profile">
+            <div class="card-head"><div><h2>Profile</h2><p>Your name, email and student number can only be changed by an administrator.</p></div></div>
+            @using (Html.BeginForm("Profile", "Account", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="field"><label for="Phone">Mobile number</label><input type="tel" id="Phone" name="Phone" value="@u.Phone" maxlength="20" autocomplete="tel" /></div>
+                        @if (u.Role == "Student" || u.Role == "Tutor")
+                        {
+                            <div class="field"><label for="Campus">Campus</label><input type="text" id="Campus" name="Campus" value="@u.Campus" maxlength="80" /></div>
+                        }
+                        else
+                        {
+                            <input type="hidden" name="Campus" value="@u.Campus" />
+                        }
+                        <div class="field">
+                            <label for="Gender">Gender <span class="hint">Optional</span></label>
+                            <select id="Gender" name="Gender">
+                                <option value="">Prefer not to say</option>
+                                @foreach (var g in RegisterViewModel.Genders.Where(x => x != "Prefer not to say")) { <option @(u.Gender == g ? "selected" : null)>@g</option> }
+                            </select>
+                        </div>
+                        <div class="field"><label for="EmergencyContactName">Emergency contact name</label><input type="text" id="EmergencyContactName" name="EmergencyContactName" value="@u.EmergencyContactName" maxlength="120" /></div>
+                        <div class="field"><label for="EmergencyContactPhone">Emergency contact number</label><input type="tel" id="EmergencyContactPhone" name="EmergencyContactPhone" value="@u.EmergencyContactPhone" maxlength="20" /></div>
+                    </div>
+                    <div class="form-actions"><button type="submit" class="btn btn-primary">Save profile</button></div>
+                </div>
+            }
+        </div>
+
+        <div class="card">
+            <div class="card-head"><div><h2>Preferences</h2><p>Saved to your account, so they follow you to any device.</p></div></div>
+            @using (Html.BeginForm("Settings", "Account", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <div class="card-body">
+                    <label class="check">
+                        <span class="switch"><input type="checkbox" name="DarkMode" value="true" @(Model.DarkMode ? "checked" : null) /><span></span></span>
+                        <span><b>Dark mode</b><br /><span class="muted small">Easier on the eyes at night. Applies to every page.</span></span>
+                    </label>
+                    <label class="check">
+                        <span class="switch"><input type="checkbox" name="EmailNotifications" value="true" @(Model.EmailNotifications ? "checked" : null) /><span></span></span>
+                        <span><b>Email notifications</b><br /><span class="muted small">Get announcements and booking requests by email as well as in the app.</span></span>
+                    </label>
+                    <input type="hidden" name="DarkMode" value="false" />
+                    <input type="hidden" name="EmailNotifications" value="false" />
+                    <div class="form-actions"><button type="submit" class="btn btn-primary">Save preferences</button></div>
+                </div>
+            }
+        </div>
+
+        <div class="card" id="privacy">
+            <div class="card-head"><div><h2>Privacy and your data</h2><p>Your rights under POPIA. <a href="@Url.Action("Privacy", "Home")">Read the privacy notice</a></p></div></div>
+            <div class="card-body">
+                <div class="privacy-row">
+                    <span class="stat-icon"><i class="fa-solid fa-file-arrow-down"></i></span>
+                    <div class="list-main"><b>Download my data</b><div class="muted small">Everything TutorConnect holds about you, as a JSON file.</div></div>
+                    <a class="btn btn-secondary btn-sm" href="@Url.Action("MyData")"><i class="fa-solid fa-download"></i>Download</a>
+                </div>
+                <div class="privacy-row">
+                    <span class="stat-icon @(u.DeletionRequestedAt.HasValue ? "warning" : "danger")"><i class="fa-solid fa-user-xmark"></i></span>
+                    <div class="list-main">
+                        <b>Delete my account</b>
+                        @if (u.DeletionRequestedAt.HasValue)
+                        {
+                            <div class="small" style="color:var(--warning)">Requested on @Ui.DateTime(u.DeletionRequestedAt.Value). An administrator will process it.</div>
+                        }
+                        else
+                        {
+                            <div class="muted small">An administrator removes your account. Payment records are kept as the law requires.</div>
+                        }
+                    </div>
+                    @using (Html.BeginForm("RequestDeletion", "Account", FormMethod.Post, new { data_confirm = u.DeletionRequestedAt.HasValue ? "Cancel your deletion request?" : "Ask for your account to be deleted? You can cancel this until an administrator processes it." }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="cancel" value="@(u.DeletionRequestedAt.HasValue ? "true" : "false")" />
+                        <button type="submit" class="btn @(u.DeletionRequestedAt.HasValue ? "btn-secondary" : "btn-danger") btn-sm">@(u.DeletionRequestedAt.HasValue ? "Cancel request" : "Request deletion")</button>
+                    }
+                </div>
+                <p class="muted small" style="margin:14px 0 0">
+                    @if (u.PopiaConsentAt.HasValue) { <text>You accepted the privacy notice on @Ui.DateTime(u.PopiaConsentAt.Value) (SAST).</text> }
+                    else { <text>You haven't accepted the privacy notice yet.</text> }
+                </p>
+            </div>
+        </div>
+
+        <div class="card" id="api">
+            <div class="card-head"><div><h2>API access</h2><p>Personal tokens let apps and tools such as Postman use the TutorConnect REST API as you.</p></div></div>
+            <div class="card-body">
+                @if (newToken != null)
+                {
+                    <div class="alert alert-success" style="margin-bottom:16px"><i class="fa-solid fa-key"></i>
+                        <div class="alert-body"><b>Your new token.</b> Copy it now; it won't be shown again.
+                            <div class="copy-row" style="margin-top:8px"><code>@newToken</code><button type="button" class="btn btn-ghost btn-sm" data-copy="@newToken"><i class="fa-regular fa-copy"></i>Copy</button></div>
+                            <div class="small muted" style="margin-top:8px">Send it as <code>Authorization: Bearer @newToken.Substring(0, 8)&hellip;</code> to <code>@apiBase</code></div>
+                        </div>
+                    </div>
+                }
+                @using (Html.BeginForm("CreateApiToken", "Account", FormMethod.Post, new { @class = "inline-form" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="field"><label for="tokenName">Token name</label><input type="text" id="tokenName" name="name" maxlength="60" placeholder="e.g. Postman testing" required /></div>
+                    <div class="field" style="max-width:150px"><label for="tokenDays">Expires after</label>
+                        <select id="tokenDays" name="days"><option value="7">7 days</option><option value="30" selected>30 days</option><option value="90">90 days</option></select></div>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i>Create token</button>
+                }
+            </div>
+            @if (tokens.Count > 0)
+            {
+                <div class="table-wrap">
+                    <table class="table">
+                        <thead><tr><th>Name</th><th>Created</th><th>Expires</th><th>Last used</th><th>Status</th><th class="right"><span class="sr-only">Actions</span></th></tr></thead>
+                        <tbody>
+                            @foreach (var t in tokens)
+                            {
+                                <tr>
+                                    <td>@t.Name</td>
+                                    <td class="nowrap">@Ui.Date(t.CreatedAt)</td>
+                                    <td class="nowrap">@Ui.Date(t.ExpiresAt)</td>
+                                    <td class="nowrap">@(t.LastUsedAt.HasValue ? Ui.Ago(t.LastUsedAt.Value) : "Never")</td>
+                                    <td>@if (t.IsActive) { <span class="badge badge-success">Active</span> } else if (t.RevokedAt.HasValue) { <span class="badge badge-muted">Revoked</span> } else { <span class="badge badge-warning">Expired</span> }</td>
+                                    <td><div class="actions">
+                                        @if (t.IsActive)
+                                        {
+                                            using (Html.BeginForm("RevokeApiToken", "Account", new { id = t.TokenId }, FormMethod.Post, new { data_confirm = "Revoke this token? Anything using it stops working." }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-ghost btn-sm">Revoke</button>
+                                            }
+                                        }
+                                    </div></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            <div class="card-foot small muted">Try it: <code>GET @apiBase/health</code> needs no token. Every endpoint is listed at <a href="@Url.Content("~/api/v1")">@apiBase</a>.</div>
+        </div>
+
+        <div class="card" id="password">
+            <div class="card-head"><div><h2>Change password</h2><p>You'll stay signed in on this device.</p></div></div>
+            @using (Html.BeginForm("ChangePassword", "Account", FormMethod.Post, new { novalidate = "novalidate" }))
+            {
+                @Html.AntiForgeryToken()
+                <div class="card-body">
+                    @Html.ValidationSummary(true, "", new { @class = "alert alert-error" })
+                    <div class="form-grid">
+                        <div class="field full">
+                            <label for="CurrentPassword">Current password</label>
+                            @Html.Password("CurrentPassword", null, new { autocomplete = "current-password" })
+                            @Html.ValidationMessage("CurrentPassword")
+                        </div>
+                        <div class="field">
+                            <label for="NewPassword">New password</label>
+                            @Html.Password("NewPassword", null, new { autocomplete = "new-password", data_strength = "" })
+                            @Html.ValidationMessage("NewPassword")
+                        </div>
+                        <div class="field">
+                            <label for="ConfirmPassword">Confirm new password</label>
+                            @Html.Password("ConfirmPassword", null, new { autocomplete = "new-password" })
+                            @Html.ValidationMessage("ConfirmPassword")
+                        </div>
+                    </div>
+                    <div class="form-actions"><button type="submit" class="btn btn-primary">Change password</button></div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="card" style="align-self:start">
+        <div class="card-body" style="text-align:center;padding-top:28px">
+            @Ui.Avatar(u.FullName, "lg")
+            <h2 style="margin-top:12px">@u.FullName</h2>
+            <p class="muted">@u.Role</p>
+        </div>
+        <div class="card-foot">
+            <dl class="dl" style="grid-template-columns:110px 1fr">
+                <dt>Email</dt><dd>@u.Email</dd>
+                @if (!string.IsNullOrEmpty(u.StudentNumber)) { <dt>Student no.</dt><dd>@u.StudentNumber</dd> }
+                @if (!string.IsNullOrEmpty(u.CourseName)) { <dt>Course</dt><dd>@u.CourseName</dd> }
+                @if (u.YearOfStudy.HasValue) { <dt>Year</dt><dd>Year @u.YearOfStudy</dd> }
+                @if (!string.IsNullOrEmpty(u.Campus)) { <dt>Campus</dt><dd>@u.Campus</dd> }
+                @if (u.DateOfBirth.HasValue) { <dt>Born</dt><dd>@u.DateOfBirth.Value.ToString("d MMMM yyyy")</dd> }
+                @if (!string.IsNullOrEmpty(u.Phone)) { <dt>Mobile</dt><dd>@u.Phone</dd> }
+                <dt>Member since</dt><dd>@Ui.Date(u.CreatedAt)</dd>
+            </dl>
+        </div>
+    </div>
+</div>

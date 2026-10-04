@@ -1,0 +1,44 @@
+﻿@model CheckInResult
+@{
+    ViewBag.Title = "Check-in";
+    var t = ViewBag.Tutorial as Tutorial;
+    string icon, tone, title, msg;
+    switch (Model.Result)
+    {
+        case "OK":
+            icon = "fa-circle-check"; tone = "success";
+            title = "You're marked present";
+            msg = "Your attendance for this tutorial has been recorded. Enjoy the session.";
+            break;
+        case "Already":
+            icon = "fa-circle-check"; tone = "success"; title = "You're already checked in";
+            msg = "Your attendance for this tutorial was already recorded as present.";
+            break;
+        case "NotEnrolled":
+            icon = "fa-circle-xmark"; tone = "danger"; title = "This tutorial isn't on your register";
+            msg = "It's for a module or year of study you aren't registered for.";
+            break;
+        case "Closed":
+            icon = "fa-clock"; tone = "warning"; title = "Check-in isn't open";
+            msg = "Check-in opens when the tutorial starts and closes when it ends.";
+            break;
+        default:
+            icon = "fa-circle-question"; tone = "danger"; title = "We couldn't find that tutorial";
+            msg = "The QR code may be from an old or deleted tutorial. Ask your tutor to show it again.";
+            break;
+    }
+}
+<div style="max-width:520px;margin:0 auto">
+    <div class="card">
+        <div class="card-body" style="text-align:center;padding:36px 28px">
+            <div class="stat-icon @tone" style="margin:0 auto 16px;width:60px;height:60px;font-size:1.6rem;border-radius:50%"><i class="fa-solid @icon"></i></div>
+            <h1>@title</h1>
+            <p class="text-2" style="margin-top:8px">@msg</p>
+            @if (t != null)
+            {
+                <p class="small muted"><span class="tag">@t.ModuleCode</span> @t.Title, @Ui.TimeRange(t.StartTime, t.EndTime)</p>
+            }
+            <a class="btn btn-secondary" href="@Url.Action("Tutorials")" style="margin-top:8px">Back to tutorials</a>
+        </div>
+    </div>
+</div>

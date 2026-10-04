@@ -1,0 +1,10 @@
+﻿@{
+    ViewBag.Title = "Page not found";
+    Layout = "~/Views/Shared/_AuthLayout.cshtml";
+}
+<div class="card"><div class="card-body" style="padding:32px">
+    <div class="stat-icon" style="margin-bottom:16px"><i class="fa-solid fa-compass"></i></div>
+    <h2>We couldn't find that page</h2>
+    <p class="text-2" style="margin-top:8px">It may have moved, or the link might be mistyped.</p>
+    <a class="btn btn-primary" href="@Url.Action("Index", "Home")" style="margin-top:12px">Go to my dashboard</a>
+</div></div>

@@ -1,0 +1,52 @@
+﻿@model Tutorial
+@{
+    ViewBag.Title = "QR check-in";
+    string url = ViewBag.CheckInUrl;
+    string codeUrl = ViewBag.CodeUrl;
+    var phoneReady = ViewBag.PhoneReady == true;
+    string phoneBase = ViewBag.PhoneBase;
+    var checkedIn = Model.PresentCount + Model.LateCount;
+    var pct = Ui.Pct(checkedIn, Model.EnrolledCount);
+}
+<a class="back-link" href="@Url.Action("Register", new { id = Model.TutorialId })"><i class="fa-solid fa-arrow-left"></i>Back to register</a>
+
+<div class="card" data-live-url="@Url.Action("LiveCount", new { id = Model.TutorialId })">
+    <div class="card-body" style="padding:32px">
+        <div class="qr-layout">
+            <div>
+                <div class="qr-box"><div id="qr-image" data-url="@url" role="img" aria-label="QR code for checking in to @Model.Title"></div></div>
+                <div class="checkin-code" title="Students who can't scan type this under Tutorials, Check in with a code">
+                    <span>Or type the code</span><b>@(Model.CheckInCode ?? "------")</b>
+                </div>
+                @if (phoneReady)
+                {
+                    <p class="phone-status ok"><i class="fa-solid fa-circle-check"></i>Phones on the same Wi-Fi can scan this.</p>
+                }
+                else
+                {
+                    <p class="phone-status warn" title="@phoneBase"><i class="fa-solid fa-mobile-screen"></i>To scan with phones, run <b>Tools\EnablePhoneAccess.cmd</b> once, then restart the site.</p>
+                }
+            </div>
+            <div>
+                <span class="tag">@Model.ModuleCode</span>
+                <h1 style="margin:10px 0 6px">@Model.Title</h1>
+                <p class="text-2">Scan with your phone camera. You'll be marked <b>present</b> as soon as you're signed in. @Ui.TimeRange(Model.StartTime, Model.EndTime)</p>
+                @if (!Model.IsLive)
+                {
+                    <div class="alert alert-warning"><i class="fa-solid fa-clock"></i><div class="alert-body">Check-in is open only while the tutorial is running, from @Ui.Time(Model.StartTime) to @Ui.Time(Model.EndTime). Students who scan before it starts are asked to try again once it begins.</div></div>
+                }
+                <div style="margin:22px 0 8px"><span class="qr-count" data-live="checkedin">@checkedIn</span> <span class="muted">of <span data-live="enrolled">@Model.EnrolledCount</span> present</span></div>
+                <div class="progress success" style="height:12px;max-width:420px"><span data-live="bar" style="width:@(pct)%"></span></div>
+                <p class="small muted" style="margin:20px 0 6px">This QR code and code belong to this tutorial only. Link for students who can't scan:</p>
+                <div class="url-box">@url</div>
+                <div class="row" style="margin-top:8px">
+                    <button type="button" class="btn btn-ghost btn-sm" data-copy="@url"><i class="fa-regular fa-copy"></i>Copy link</button>
+                    <button type="button" class="btn btn-ghost btn-sm" data-fullscreen="#qr-image"><i class="fa-solid fa-expand"></i>Show full screen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section scripts {
+    <script src="@Ui.Asset("~/Scripts/qrcode-generator.js")"></script>
+}

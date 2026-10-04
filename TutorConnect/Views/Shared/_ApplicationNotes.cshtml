@@ -1,0 +1,42 @@
+﻿@model List<ApplicationComment>
+@{
+    var controller = (string)ViewData["NotesController"];
+    var appId = (int)ViewData["ApplicationId"];
+    var canWrite = ViewData["CanWrite"] as bool? ?? true;
+    var me = Session["Role"] as string;
+}
+<div class="card mt" id="notes">
+    <div class="card-head"><div><h2>Notes</h2><p>A conversation between the administrator and the reviewing lecturer. The applicant never sees these.</p></div></div>
+    <div class="card-body">
+        @if (Model.Count == 0)
+        {
+            <p class="muted small" style="margin:0 0 12px">No notes yet. @(me == "Lecturer" ? "Ask the administrator a question or share your thoughts before recommending." : "Send the reviewing lecturer a note, for example what to look for.")</p>
+        }
+        else
+        {
+            <ul class="notes">
+                @foreach (var n in Model)
+                {
+                    <li class="note @(n.Role == me ? "mine" : null)">
+                        <div class="note-head">@Ui.Avatar(n.AuthorName, "sm")<b>@n.AuthorName</b><span class="badge badge-muted">@n.Role</span><span class="muted small">@Ui.DateTime(n.CreatedAt)</span></div>
+                        <p class="note-body">@n.Comment</p>
+                    </li>
+                }
+            </ul>
+        }
+        @if (canWrite)
+        {
+            using (Html.BeginForm("AddNote", controller, new { id = appId }, FormMethod.Post, new { @class = "note-form" }))
+            {
+                @Html.AntiForgeryToken()
+                <label for="noteText" class="sr-only">Write a note</label>
+                <textarea id="noteText" name="comment" maxlength="1000" rows="3" required placeholder="@(me == "Lecturer" ? "Write a note to the administrator…" : "Write a note to the reviewing lecturer…")"></textarea>
+                <div class="form-actions" style="margin-top:10px"><button type="submit" class="btn btn-primary"><i class="fa-regular fa-paper-plane"></i>Send note</button></div>
+            }
+        }
+        else
+        {
+            <p class="muted small" style="margin:0">Assign a lecturer to start the conversation.</p>
+        }
+    </div>
+</div>

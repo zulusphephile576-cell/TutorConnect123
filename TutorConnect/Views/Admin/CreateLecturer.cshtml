@@ -1,0 +1,23 @@
+﻿@model CreateLecturerViewModel
+@{
+    ViewBag.Title = "Add a lecturer";
+}
+<a class="back-link" href="@Url.Action("Users", new { role = "Lecturer" })"><i class="fa-solid fa-arrow-left"></i>Back to lecturers</a>
+<div class="page-head"><div><h1>Add a lecturer</h1><p>A temporary password is generated and emailed to their personal address. Afterwards, link their modules under Modules.</p></div></div>
+@using (Html.BeginForm("CreateLecturer", "Admin", FormMethod.Post, new { novalidate = "novalidate" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="card" style="max-width:760px">
+        <div class="card-body">
+            @Html.ValidationSummary(true, "", new { @class = "alert alert-error" })
+            <div class="form-grid">
+                <div class="field">@Html.LabelFor(m => m.FirstName)@Html.TextBoxFor(m => m.FirstName)@Html.ValidationMessageFor(m => m.FirstName)</div>
+                <div class="field">@Html.LabelFor(m => m.LastName)@Html.TextBoxFor(m => m.LastName)@Html.ValidationMessageFor(m => m.LastName)</div>
+                <div class="field full">@Html.LabelFor(m => m.Email)@Html.TextBoxFor(m => m.Email, new { type = "email" })@Html.ValidationMessageFor(m => m.Email)</div>
+                <div class="field full">@Html.LabelFor(m => m.PersonalEmail)@Html.TextBoxFor(m => m.PersonalEmail, new { type = "email" })@Html.ValidationMessageFor(m => m.PersonalEmail)</div>
+                <div class="field">@Html.LabelFor(m => m.Phone) <span class="hint">Optional</span>@Html.TextBoxFor(m => m.Phone, new { type = "tel" })@Html.ValidationMessageFor(m => m.Phone)</div>
+            </div>
+            <div class="form-actions"><button type="submit" class="btn btn-primary">Create lecturer account</button></div>
+        </div>
+    </div>
+}

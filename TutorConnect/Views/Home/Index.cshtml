@@ -1,0 +1,195 @@
+﻿@{
+    ViewBag.Title = "Tutoring, organised";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+}
+<section class="lp-hero">
+    <div class="lp-wrap lp-hero-grid">
+        <div class="lp-hero-copy">
+            <p class="lp-kicker"><i class="fa-solid fa-circle"></i>For students, tutors, lecturers and admins</p>
+            <h1>Book a tutor, pay, and check in, all in one place.</h1>
+            <p class="lp-lede">TutorConnect replaces the spreadsheets, group chats and paper registers behind university tutoring. Students find help for their own modules; tutors get booked, run registers and get paid.</p>
+            <div class="lp-hero-cta">
+                <a class="btn btn-primary btn-lg" href="@Url.Action("Register", "Account")">Create a student account</a>
+                <a class="btn btn-light btn-lg" href="@Url.Action("Apply", "TutorApplication")">Apply to tutor</a>
+            </div>
+            <ul class="lp-facts">
+                <li><b>R105</b><span>per hour, paid through PayFast</span></li>
+                <li><b>QR</b><span>check-in in seconds</span></li>
+                <li><b>20 min</b><span>reminders before every session</span></li>
+            </ul>
+        </div>
+
+        <div class="lp-mock" aria-hidden="true">
+            <div class="mock-card mock-booking">
+                <div class="mock-head"><span class="mock-avatar" style="background:#6C63FF">SN</span><div><b>Sipho Ndlovu</b><small>ITPR101, Programming 1</small></div><span class="badge badge-success">Paid</span></div>
+                <div class="mock-slots">
+                    <span>Tue 14:00</span><span class="on">Tue 16:00</span><span>Wed 10:00</span><span>Thu 13:00</span>
+                </div>
+                <div class="mock-total"><span>2 hours &times; R105,00</span><b>R210,00</b></div>
+                <div class="mock-btn"><i class="fa-solid fa-lock"></i>Pay with PayFast</div>
+            </div>
+
+            <div class="mock-card mock-qr">
+                <div class="mock-qr-code">
+                    @for (var i = 0; i < 49; i++)
+                    {
+                        var on = (i * 7 + i / 7 * 3) % 5 < 2 || i == 0 || i == 6 || i == 42 || i == 8 || i == 12 || i == 36;
+                        <i class="@(on ? "on" : null)"></i>
+                    }
+                </div>
+                <div>
+                    <small>SQL joins, Lab 3</small>
+                    <div class="mock-qr-count"><b>24</b>/31 checked in</div>
+                    <div class="progress success"><span style="width:77%"></span></div>
+                </div>
+            </div>
+
+            <div class="mock-card mock-att">
+                <div class="spread"><small>Attendance this term</small><span class="mock-up"><i class="fa-solid fa-arrow-trend-up"></i> 86%</span></div>
+                <div class="mock-bars">
+                    @foreach (var h in new[] { 52, 64, 58, 71, 69, 80, 77, 86 })
+                    {
+                        <span style="height:@(h)%"></span>
+                    }
+                </div>
+            </div>
+
+            <div class="mock-toast"><i class="fa-regular fa-bell"></i><div><b>Starts in 18 minutes</b><small>Tutorial: SQL joins in Lab 3</small></div></div>
+        </div>
+    </div>
+</section>
+
+<section class="lp-section" id="how">
+    <div class="lp-wrap">
+        <div class="lp-section-head">
+            <h2>From "I'm stuck" to a booked session in four steps</h2>
+            <p>Students only ever see tutors assigned to their own modules and year, so every match is relevant.</p>
+        </div>
+        <ol class="lp-steps">
+            <li><span class="lp-step-n">1</span><i class="fa-solid fa-magnifying-glass"></i><h3>Find</h3><p>Search your registered modules and see which tutors have open slots.</p></li>
+            <li><span class="lp-step-n">2</span><i class="fa-regular fa-calendar"></i><h3>Pick a time</h3><p>Choose a slot and how many hours you need. The price updates as you go.</p></li>
+            <li><span class="lp-step-n">3</span><i class="fa-solid fa-lock"></i><h3>Pay securely</h3><p>Checkout happens on PayFast. Your request only reaches the tutor once payment clears.</p></li>
+            <li><span class="lp-step-n">4</span><i class="fa-solid fa-circle-check"></i><h3>Get confirmed</h3><p>Your tutor approves, you get a reminder 20 minutes before, and the tutor is paid automatically.</p></li>
+        </ol>
+    </div>
+</section>
+
+<section class="lp-section lp-section-alt" id="features">
+    <div class="lp-wrap">
+        <div class="lp-section-head">
+            <h2>Everything a tutoring programme runs on</h2>
+            <p>Built around how tutoring actually works at a university, not a generic booking tool.</p>
+        </div>
+        <div class="lp-bento">
+            <article class="lp-tile lp-tile-wide lp-tile-ink">
+                <div>
+                    <i class="fa-solid fa-qrcode"></i>
+                    <h3>Registers that fill themselves in</h3>
+                    <p>Every tutorial gets a register of enrolled students automatically. Put the QR code on the projector and students scan in from their phones. Scanning marks a student present immediately.</p>
+                </div>
+                <ul class="lp-register">
+                    <li><span class="mock-avatar sm" style="background:#0E7490">TM</span>Thandi Mokoena<span class="badge badge-success">Present</span></li>
+                    <li><span class="mock-avatar sm" style="background:#B45309">LN</span>Liam Naidoo<span class="badge badge-success">Present</span></li>
+                    <li><span class="mock-avatar sm" style="background:#7C3AED">AP</span>Ayesha Patel<span class="badge badge-success">Present</span></li>
+                </ul>
+            </article>
+            <article class="lp-tile">
+                <i class="fa-solid fa-money-bill-transfer"></i>
+                <h3>Payouts without paperwork</h3>
+                <p>When a payment clears, the tutor's payout is queued straight away. Bank numbers are stored encrypted.</p>
+            </article>
+            <article class="lp-tile">
+                <i class="fa-solid fa-calendar-week"></i>
+                <h3>A week at a glance</h3>
+                <p>Sessions, tutorials and open slots on one calendar, with reminders before anything starts.</p>
+            </article>
+            <article class="lp-tile">
+                <i class="fa-solid fa-file-signature"></i>
+                <h3>Fair tutor selection</h3>
+                <p>Students apply with their mark and motivation. A lecturer recommends; an admin decides and the account is created for them.</p>
+            </article>
+            <article class="lp-tile">
+                <i class="fa-solid fa-folder-open"></i>
+                <h3>Shared course content</h3>
+                <p>Lecturers and tutors upload material per module and year, and each side marks the other's uploads as reviewed.</p>
+            </article>
+            <article class="lp-tile">
+                <i class="fa-solid fa-shield-halved"></i>
+                <h3>Private by default</h3>
+                <p>Passwords are hashed, uploads are only shown to the right roles, and every form is protected against forgery.</p>
+            </article>
+            <article class="lp-tile lp-tile-wide">
+                <div>
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <h3>Know which modules need help</h3>
+                    <p>Attendance by module, modules with no tutor, the application pipeline and every transaction, in one admin view.</p>
+                </div>
+                <div class="lp-mini-chart">
+                    @foreach (var m in new[] { new { C = "ITPR101", R = 88 }, new { C = "ITDB101", R = 74 }, new { C = "ITWD101", R = 61 }, new { C = "ITPR201", R = 45 } })
+                    {
+                        <div class="rate"><span class="tag">@m.C</span><div class="progress @(m.R >= 75 ? "success" : m.R >= 50 ? "warning" : "danger")"><span style="width:@(m.R)%"></span></div><b>@(m.R)%</b></div>
+                    }
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="lp-section" id="roles">
+    <div class="lp-wrap">
+        <div class="lp-section-head">
+            <h2>One system, a workspace for each role</h2>
+            <p>Everyone signs in to the same place and sees only what they need.</p>
+        </div>
+        <div class="lp-roles">
+            <input type="radio" name="role-tab" id="rt-s" checked /><input type="radio" name="role-tab" id="rt-t" /><input type="radio" name="role-tab" id="rt-l" /><input type="radio" name="role-tab" id="rt-a" />
+            <div class="lp-role-tabs" role="tablist">
+                <label for="rt-s"><i class="fa-solid fa-user-graduate"></i>Students</label>
+                <label for="rt-t"><i class="fa-solid fa-chalkboard-user"></i>Tutors</label>
+                <label for="rt-l"><i class="fa-solid fa-user-tie"></i>Lecturers</label>
+                <label for="rt-a"><i class="fa-solid fa-shield-halved"></i>Administrators</label>
+            </div>
+            <div class="lp-role-panels">
+                <div class="lp-role-panel" data-for="rt-s">
+                    <div><h3>Help for your modules, when you need it</h3><p>Your modules are registered the moment you sign up, based on your course and year.</p><a class="btn btn-primary" href="@Url.Action("Register", "Account")">Create a student account</a></div>
+                    <ul class="lp-checks"><li>Search tutors for your own modules</li><li>Book and pay for one-on-one sessions</li><li>Check in to tutorials with a QR scan</li><li>See your attendance history and rate</li><li>Read announcements from your tutors</li></ul>
+                </div>
+                <div class="lp-role-panel" data-for="rt-t">
+                    <div><h3>Run your tutoring like a professional</h3><p>Tutor accounts are created when an application is approved.</p><a class="btn btn-primary" href="@Url.Action("Apply", "TutorApplication")">Apply to tutor</a></div>
+                    <ul class="lp-checks"><li>Publish availability in a few clicks</li><li>Approve, decline or reschedule requests</li><li>Create tutorials with automatic registers</li><li>Post announcements to a whole module</li><li>Get paid out automatically</li></ul>
+                </div>
+                <div class="lp-role-panel" data-for="rt-l">
+                    <div><h3>Oversight without chasing people</h3><p>Lecturer accounts are created by an administrator.</p><a class="btn btn-primary" href="@Url.Action("Login", "Account", new { role = "Lecturer" })">Lecturer sign-in</a></div>
+                    <ul class="lp-checks"><li>Assign tutors per module and year</li><li>Upload and review course content</li><li>Recommend tutor applicants</li><li>Follow attendance and student progress</li></ul>
+                </div>
+                <div class="lp-role-panel" data-for="rt-a">
+                    <div><h3>The whole programme in one place</h3><p>Manage people, courses and money from a single dashboard.</p><a class="btn btn-primary" href="@Url.Action("Login", "Account", new { role = "Admin" })">Admin sign-in</a></div>
+                    <ul class="lp-checks"><li>Create courses with up to eight modules at once</li><li>Decide tutor applications and create accounts</li><li>Create lecturer accounts</li><li>See every payment and payout</li><li>Analytics across modules and tutors</li></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="lp-section lp-section-alt" id="faq">
+    <div class="lp-wrap lp-faq-grid">
+        <div class="lp-section-head" style="text-align:left;margin:0">
+            <h2>Questions people ask</h2>
+            <p>Anything else? Ask your faculty's tutoring coordinator.</p>
+        </div>
+        <div class="lp-faq">
+            <details open><summary>How much does a session cost?</summary><p>R105 per hour. You choose how many hours when you book, and the total is shown before you pay.</p></details>
+            <details><summary>When does my tutor see my booking?</summary><p>As soon as PayFast confirms your payment. Your tutor then approves or declines, and you'll see the update on your dashboard.</p></details>
+            <details><summary>Which tutors can I book?</summary><p>Tutors assigned by your lecturers to your registered modules for your year of study.</p></details>
+            <details><summary>How do I become a tutor?</summary><p>Apply with your mark for the module and a short motivation. A lecturer reviews it, an administrator makes the final decision, and your login details are emailed to you.</p></details>
+            <details><summary>Can I check in for a friend?</summary><p>No. QR check-in always records the person who is signed in on that phone, so registers stay accurate.</p></details>
+        </div>
+    </div>
+</section>
+
+<section class="lp-cta">
+    <div class="lp-wrap lp-cta-inner">
+        <div><h2>Your next tutorial is easier to find than you think.</h2><p>Create an account with your student number and your modules are ready immediately.</p></div>
+        <div class="lp-hero-cta"><a class="btn btn-white btn-lg" href="@Url.Action("Register", "Account")">Create a student account</a><a class="btn btn-light btn-lg" href="@Url.Action("Login", "Account")">Sign in</a></div>
+    </div>
+</section>

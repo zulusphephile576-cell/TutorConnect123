@@ -1,0 +1,111 @@
+﻿@model List<Tutorial>
+@{
+    ViewBag.Title = "Tutorials";
+    var form = (TutorialFormViewModel)ViewBag.Form;
+    var open = ViewBag.OpenForm == true;
+    var upcoming = Model.Where(t => !t.IsPast).ToList();
+    var past = Model.Where(t => t.IsPast).ToList();
+}
+<div class="page-head">
+    <div><h1>Tutorials</h1><p>Group sessions for a module and year. The register is generated from every student enrolled, and students can check in with a QR code.</p></div>
+</div>
+
+@if (form.Assignments.Count == 0)
+{
+    @Html.Partial("_NoAssignments")
+}
+else
+{
+    <details class="card mb drawer" @(open || Model.Count == 0 ? "open" : null)>
+        <summary class="card-head"><div><h2>Schedule a tutorial</h2><p>Enrolled students are notified in the app.</p></div><span class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i>New tutorial</span></summary>
+        @using (Html.BeginForm("CreateTutorial", "Tutor", FormMethod.Post, new { novalidate = "novalidate" }))
+        {
+            @Html.AntiForgeryToken()
+            <div class="card-body">
+                @Html.ValidationSummary(false, "", new { @class = "alert alert-error" })
+                <div class="form-grid">
+                    <div class="field"><label for="Assignment">Module and year</label><select id="Assignment" name="Assignment" required>@Html.Partial("_AssignmentOptions", form.Assignments, new ViewDataDictionary { { "Selected", form.Assignment } })</select></div>
+                    <div class="field"><label for="Title">Title</label><input type="text" id="Title" name="Title" value="@form.Title" maxlength="150" placeholder="e.g. Loops and arrays revision" required /></div>
+                    <div class="field"><label for="Venue">Venue</label><input type="text" id="Venue" name="Venue" value="@form.Venue" maxlength="150" placeholder="e.g. Lab 3, Block B" /></div>
+                    <div class="field"><label for="Date">Date</label><input type="date" id="Date" name="Date" value="@(form.Date.HasValue ? form.Date.Value.ToString("yyyy-MM-dd") : "")" required /></div>
+                    <div class="field"><label for="StartTime">Starts</label><input type="time" id="StartTime" name="StartTime" value="@(form.StartTime.HasValue ? form.StartTime.Value.ToString("hh\\:mm") : "10:00")" step="900" required /></div>
+                    <div class="field"><label for="EndTime">Ends</label><input type="time" id="EndTime" name="EndTime" value="@(form.EndTime.HasValue ? form.EndTime.Value.ToString("hh\\:mm") : "11:00")" step="900" required /></div>
+                    <div class="field full"><label for="Description">What will you cover?</label><textarea id="Description" name="Description" maxlength="1000">@form.Description</textarea></div>
+                </div>
+                <div class="form-actions"><button type="submit" class="btn btn-primary">Create tutorial and register</button></div>
+            </div>
+        }
+    </details>
+}
+
+<div class="card mb">
+    <div class="card-head"><h2>Upcoming and live</h2></div>
+    @if (upcoming.Count == 0)
+    {
+        <div class="empty"><i class="fa-solid fa-chalkboard"></i><p>No upcoming tutorials.</p></div>
+    }
+    else
+    {
+        <ul class="list">
+            @foreach (var t in upcoming)
+            {
+                <li class="list-item">
+                    <div class="date-tile"><b>@t.StartTime.Day</b><span>@t.StartTime.ToString("MMM")</span></div>
+                    <div class="list-main">
+                        <div class="list-title"><a href="@Url.Action("Register", new { id = t.TutorialId })">@t.Title</a> @if (t.IsLive) { <span class="badge badge-success">Check-in open</span> }</div>
+                        <div class="list-meta"><span class="tag">@t.ModuleCode</span> Year @t.YearOfStudy, @Ui.TimeRange(t.StartTime, t.EndTime)@(string.IsNullOrEmpty(t.Venue) ? "" : ", " + t.Venue)</div>
+                    </div>
+                    <div class="list-side row">
+                        <span class="small muted">@(t.PresentCount + t.LateCount)/@t.EnrolledCount in</span>
+                        <a class="btn btn-secondary btn-sm" href="@Url.Action("Register", new { id = t.TutorialId })">Register</a>
+                        <a class="btn btn-primary btn-sm" href="@Url.Action("QrCode", new { id = t.TutorialId })"><i class="fa-solid fa-qrcode"></i>QR code</a>
+                        <a class="btn btn-ghost btn-sm" href="@Url.Action("EditTutorial", new { id = t.TutorialId })" aria-label="Edit @t.Title" title="Edit"><i class="fa-regular fa-pen-to-square"></i></a>
+                        @using (Html.BeginForm("DeleteTutorial", "Tutor", new { id = t.TutorialId }, FormMethod.Post, new { data_confirm = "Delete \"" + t.Title + "\"? Students on the register will be told it's cancelled." }))
+                        {
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-ghost btn-sm" aria-label="Delete @t.Title" title="Delete"><i class="fa-regular fa-trash-can"></i></button>
+                        }
+                    </div>
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+<div class="card">
+    <div class="card-head"><h2>Past tutorials</h2></div>
+    @if (past.Count == 0)
+    {
+        <div class="empty"><p>None yet.</p></div>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Tutorial</th><th>Module</th><th>Date</th><th>Attendance</th><th class="right"><span class="sr-only">Actions</span></th></tr></thead>
+                <tbody>
+                    @foreach (var t in past)
+                    {
+                        var pct = Ui.Pct(t.PresentCount + t.LateCount, t.EnrolledCount);
+                        <tr>
+                            <td><a href="@Url.Action("Register", new { id = t.TutorialId })">@t.Title</a></td>
+                            <td><span class="tag">@t.ModuleCode</span> <span class="small muted">Y@t.YearOfStudy</span></td>
+                            <td class="nowrap">@Ui.Date(t.StartTime)</td>
+                            <td style="min-width:180px"><div class="rate"><div class="progress @Ui.RateTone(pct)"><span style="width:@(pct)%"></span></div><b>@pct%</b></div></td>
+                            <td>
+                                <div class="actions">
+                                    <a class="btn btn-ghost btn-sm" href="@Url.Action("Register", new { id = t.TutorialId })">Register</a>
+                                    <a class="btn btn-ghost btn-sm" href="@Url.Action("EditTutorial", new { id = t.TutorialId })" aria-label="Edit @t.Title"><i class="fa-regular fa-pen-to-square"></i></a>
+                                    @using (Html.BeginForm("DeleteTutorial", "Tutor", new { id = t.TutorialId }, FormMethod.Post, new { data_confirm = "Delete this tutorial and its attendance records?" }))
+                                    {
+                                        @Html.AntiForgeryToken()<button type="submit" class="btn btn-ghost btn-sm" aria-label="Delete"><i class="fa-regular fa-trash-can"></i></button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

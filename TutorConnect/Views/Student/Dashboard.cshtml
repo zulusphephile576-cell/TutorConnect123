@@ -1,0 +1,176 @@
+﻿@model DashboardViewModel
+@{
+    ViewBag.Title = "Dashboard";
+    var first = (Session["FirstName"] as string) ?? "";
+    var hour = TutorConnect.Helpers.Clock.Now.Hour;
+    var greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+    var rate = Model.StatDecimal("AttendanceRate");
+}
+<div class="card hero mb">
+    <div class="hero-inner">
+        <div>
+            <h1>@greeting, @first</h1>
+            <p style="margin:6px 0 0">
+                @if (Model.Sessions.Count > 0)
+                {
+                    <text>Your next session is @Ui.DateTime(Model.Sessions[0].StartTime) with @Model.Sessions[0].TutorName.</text>
+                }
+                else
+                {
+                    <text>You have no sessions booked. Your tutors' open slots are waiting.</text>
+                }
+            </p>
+        </div>
+        <div class="hero-actions">
+            <a class="btn btn-white" href="@Url.Action("FindTutor")"><i class="fa-solid fa-magnifying-glass"></i>Find a tutor</a>
+            <a class="btn btn-light" href="@Url.Action("Tutorials")">Tutorials</a>
+            <a class="btn btn-light" href="@Url.Action("Bookings")">My bookings</a>
+        </div>
+    </div>
+</div>
+
+<div class="stats mb">
+    <div class="stat"><div class="stat-top">Registered modules<span class="stat-icon"><i class="fa-solid fa-book"></i></span></div><div class="stat-value">@Model.Stat("ModuleCount")</div></div>
+    <div class="stat"><div class="stat-top">Upcoming sessions<span class="stat-icon info"><i class="fa-solid fa-calendar"></i></span></div><div class="stat-value">@Model.Stat("UpcomingSessions")</div></div>
+    <div class="stat"><div class="stat-top">Attendance records<span class="stat-icon warning"><i class="fa-solid fa-clipboard-check"></i></span></div><div class="stat-value">@Model.Stat("AttendanceRecords")</div></div>
+    <div class="stat feature">
+        <div class="stat-top">Attendance rate<span class="stat-icon @Ui.RateTone(rate)"><i class="fa-solid fa-chart-line"></i></span></div>
+        <div class="stat-value">@(Model.Stat("AttendanceRecords") == 0 ? "\u2013" : Ui.Percent(rate))</div>
+        <div class="stat-note">Present, across sessions and tutorials</div>
+    </div>
+</div>
+
+<div class="grid grid-main">
+    <div class="stack">
+        <div class="card">
+            <div class="card-head"><div><h2>Upcoming sessions</h2><p>One-on-one sessions you've paid for</p></div><a href="@Url.Action("Bookings")">All bookings</a></div>
+            @if (Model.Sessions.Count == 0)
+            {
+                <div class="empty"><i class="fa-regular fa-calendar"></i><p>Nothing booked yet.</p><a class="btn btn-primary btn-sm" href="@Url.Action("FindTutor")">Book a session</a></div>
+            }
+            else
+            {
+                <ul class="list">
+                    @foreach (var s in Model.Sessions)
+                    {
+                        <li class="list-item">
+                            <div class="date-tile"><b>@s.StartTime.Day</b><span>@s.StartTime.ToString("MMM")</span></div>
+                            <div class="list-main">
+                                <div class="list-title"><span class="tag">@s.ModuleCode</span> with @s.TutorName</div>
+                                <div class="list-meta">@Ui.TimeRange(s.StartTime, s.EndTime), @s.Hours h</div>
+                            </div>
+                            <div class="list-side">@Ui.Badge(s.Status)</div>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+
+        <div class="card">
+            <div class="card-head"><div><h2>Upcoming tutorials</h2><p>Group tutorials for your modules</p></div><a href="@Url.Action("Tutorials")">All tutorials</a></div>
+            @if (Model.Tutorials.Count == 0)
+            {
+                <div class="empty"><i class="fa-solid fa-chalkboard"></i><p>No tutorials scheduled right now.</p></div>
+            }
+            else
+            {
+                <ul class="list">
+                    @foreach (var t in Model.Tutorials)
+                    {
+                        <li class="list-item">
+                            <div class="date-tile"><b>@t.StartTime.Day</b><span>@t.StartTime.ToString("MMM")</span></div>
+                            <div class="list-main">
+                                <div class="list-title"><a href="@Url.Action("Tutorial", new { id = t.TutorialId })">@t.Title</a></div>
+                                <div class="list-meta"><span class="tag">@t.ModuleCode</span> @Ui.TimeRange(t.StartTime, t.EndTime)@(string.IsNullOrEmpty(t.Venue) ? "" : ", " + t.Venue)</div>
+                            </div>
+                            @if (t.IsLive) { <span class="badge badge-success">Check-in open</span> }
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+
+        <div class="card">
+            <div class="card-head"><h2>Recent activity</h2></div>
+            @if (Model.Activity.Count == 0)
+            {
+                <div class="empty"><p>Your activity will show up here.</p></div>
+            }
+            else
+            {
+                <ul class="list">
+                    @foreach (var a in Model.Activity)
+                    {
+                        <li class="list-item"><span class="feed-dot"></span><div class="list-main"><div>@a.Message</div><div class="list-meta">@Ui.Ago(a.CreatedAt)</div></div></li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+
+    <div class="stack">
+        <div class="card" id="announcements">
+            <div class="card-head"><h2>Announcements</h2></div>
+            @if (Model.Announcements.Count == 0)
+            {
+                <div class="empty"><i class="fa-solid fa-bullhorn"></i><p>No announcements from your tutors yet.</p></div>
+            }
+            else
+            {
+                <ul class="list">
+                    @foreach (var a in Model.Announcements)
+                    {
+                        <li class="list-item" style="align-items:flex-start">
+                            <div class="list-main">
+                                <div class="list-title">@a.Title</div>
+                                <div class="text-2 small" style="white-space:pre-line;margin:4px 0">@a.Message</div>
+                                <div class="list-meta"><span class="tag">@a.ModuleCode</span> @a.TutorName, @Ui.Ago(a.CreatedAt)</div>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+
+        <div class="card">
+            <div class="card-head"><h2>My tutors</h2></div>
+            @if (Model.Tutors.Count == 0)
+            {
+                <div class="empty"><p>No tutors have been assigned to your modules yet.</p></div>
+            }
+            else
+            {
+                <ul class="list">
+                    @foreach (var t in Model.Tutors)
+                    {
+                        <li class="list-item">
+                            @Ui.Avatar(t.TutorName)
+                            <div class="list-main"><div class="list-title">@t.TutorName</div><div class="list-meta">@t.ModuleCode, @t.ModuleName</div></div>
+                            <a class="btn btn-secondary btn-sm" href="@Url.Action("Book", new { tutorId = t.TutorId, moduleId = t.ModuleId })">Book</a>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+
+        <div class="card">
+            <div class="card-head"><div><h2>Newly opened slots</h2><p>Added in the last week</p></div></div>
+            @if (Model.NewSlots.Count == 0)
+            {
+                <div class="empty"><p>No new slots this week.</p></div>
+            }
+            else
+            {
+                <ul class="list">
+                    @foreach (var s in Model.NewSlots)
+                    {
+                        <li class="list-item">
+                            <div class="list-main"><div class="list-title">@Ui.TimeRange(s.StartTime, s.EndTime)</div><div class="list-meta">@s.TutorName</div></div>
+                            <a class="btn btn-ghost btn-sm" href="@Url.Action("Book", new { tutorId = s.TutorId })">Book</a>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+</div>

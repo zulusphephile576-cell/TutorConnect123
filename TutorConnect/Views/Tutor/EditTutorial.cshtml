@@ -1,0 +1,66 @@
+﻿@model TutorialFormViewModel
+@{
+    ViewBag.Title = "Edit tutorial";
+    var t = (Tutorial)ViewBag.Tutorial;
+    var marked = t.PresentCount + t.LateCount + t.AbsentCount;
+}
+<a class="back-link" href="@Url.Action("Tutorials")"><i class="fa-solid fa-arrow-left"></i>Tutorials</a>
+<div class="page-head">
+    <div><h1>Edit tutorial</h1><p>Change the details of <b>@t.Title</b>. Students on the register are notified when you save.</p></div>
+</div>
+
+<div class="grid grid-aside">
+    <div class="card">
+        @using (Html.BeginForm("EditTutorial", "Tutor", new { id = t.TutorialId }, FormMethod.Post, new { novalidate = "novalidate" }))
+        {
+            @Html.AntiForgeryToken()
+            <div class="card-body">
+                @Html.ValidationSummary(false, "", new { @class = "alert alert-error" })
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="Assignment">Module and year</label>
+                        <select id="Assignment" name="Assignment" required @(marked > 0 ? "disabled" : null)>@Html.Partial("_AssignmentOptions", Model.Assignments, new ViewDataDictionary { { "Selected", Model.Assignment } })</select>
+                        @if (marked > 0)
+                        {
+                            <input type="hidden" name="Assignment" value="@Model.Assignment" />
+                            <span class="hint">Attendance has been taken, so the module and year are fixed.</span>
+                        }
+                    </div>
+                    <div class="field"><label for="Title">Title</label><input type="text" id="Title" name="Title" value="@Model.Title" maxlength="150" required /></div>
+                    <div class="field"><label for="Venue">Venue</label><input type="text" id="Venue" name="Venue" value="@Model.Venue" maxlength="150" placeholder="e.g. Lab 3, Block B" /></div>
+                    <div class="field"><label for="Date">Date</label><input type="date" id="Date" name="Date" value="@(Model.Date.HasValue ? Model.Date.Value.ToString("yyyy-MM-dd") : "")" required /></div>
+                    <div class="field"><label for="StartTime">Starts</label><input type="time" id="StartTime" name="StartTime" value="@(Model.StartTime.HasValue ? Model.StartTime.Value.ToString("hh\\:mm") : "")" step="300" required /></div>
+                    <div class="field"><label for="EndTime">Ends</label><input type="time" id="EndTime" name="EndTime" value="@(Model.EndTime.HasValue ? Model.EndTime.Value.ToString("hh\\:mm") : "")" step="300" required /></div>
+                    <div class="field full"><label for="Description">What will you cover?</label><textarea id="Description" name="Description" maxlength="1000">@Model.Description</textarea></div>
+                </div>
+                <div class="form-actions">
+                    <a class="btn btn-ghost" href="@Url.Action("Tutorials")">Cancel</a>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i>Save changes</button>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="stack" style="align-self:start">
+        <div class="card">
+            <div class="card-head"><h2>This tutorial</h2></div>
+            <div class="card-body">
+                <dl class="dl" style="grid-template-columns:110px 1fr">
+                    <dt>Module</dt><dd><span class="tag">@t.ModuleCode</span> Year @t.YearOfStudy</dd>
+                    <dt>When</dt><dd>@Ui.TimeRange(t.StartTime, t.EndTime)</dd>
+                    <dt>Register</dt><dd>@t.EnrolledCount students, @marked marked</dd>
+                    <dt>Check-in code</dt><dd class="mono">@(t.CheckInCode ?? "–")</dd>
+                </dl>
+                <p class="small muted" style="margin:12px 0 0">The QR code and check-in code stay the same when you edit.</p>
+            </div>
+        </div>
+        <div class="card" style="border-color:color-mix(in srgb, var(--danger) 30%, transparent)">
+            <div class="card-head"><div><h2>Delete tutorial</h2><p>Removes it and its register@(marked > 0 ? ", including " + marked + " attendance records" : "").</p></div></div>
+            @using (Html.BeginForm("DeleteTutorial", "Tutor", new { id = t.TutorialId }, FormMethod.Post, new { data_confirm = "Delete \"" + t.Title + "\" permanently? Students on the register will be told it's cancelled." }))
+            {
+                @Html.AntiForgeryToken()
+                <div class="card-body"><button type="submit" class="btn btn-danger btn-block"><i class="fa-regular fa-trash-can"></i>Delete this tutorial</button></div>
+            }
+        </div>
+    </div>
+</div>

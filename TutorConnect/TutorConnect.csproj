@@ -1,0 +1,282 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion />
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{8B3C6E21-4F0A-4C7D-9E55-1A2B3C4D5E6F}</ProjectGuid>
+    <ProjectTypeGuids>{349c5851-65df-11da-9384-00065b846f21};{fae04ec0-301f-11d3-bf4b-00c04f79efbc}</ProjectTypeGuids>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>TutorConnect</RootNamespace>
+    <AssemblyName>TutorConnect</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <LangVersion>7.3</LangVersion>
+    <MvcBuildViews>false</MvcBuildViews>
+    <UseIISExpress>true</UseIISExpress>
+    <Use64BitIISExpress />
+    <IISExpressSSLPort />
+    <IISExpressAnonymousAuthentication />
+    <IISExpressWindowsAuthentication />
+    <IISExpressUseClassicPipelineMode />
+    <UseGlobalApplicationHostFile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.Abstractions" />
+    <Reference Include="System.Web.ApplicationServices" />
+    <Reference Include="System.Web.DynamicData" />
+    <Reference Include="System.Web.Entity" />
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Web.Routing" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="BCrypt.Net-Next, Version=4.0.3.0, Culture=neutral, PublicKeyToken=1e11be04b6288443, processorArchitecture=MSIL">
+      <HintPath>..\packages\BCrypt.Net-Next.4.0.3\lib\net462\BCrypt.Net-Next.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Web.Infrastructure, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Web.Infrastructure.2.0.0\lib\net40\Microsoft.Web.Infrastructure.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.Helpers, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.9\lib\net45\System.Web.Helpers.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.Mvc, Version=5.2.9.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.Mvc.5.2.9\lib\net45\System.Web.Mvc.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.Razor, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.Razor.3.2.9\lib\net45\System.Web.Razor.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.WebPages, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.9\lib\net45\System.Web.WebPages.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.WebPages.Deployment, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.9\lib\net45\System.Web.WebPages.Deployment.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.WebPages.Razor, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.9\lib\net45\System.Web.WebPages.Razor.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="App_Start\FilterConfig.cs" />
+    <Compile Include="App_Start\RouteConfig.cs" />
+    <Compile Include="Controllers\AccountController.cs" />
+    <Compile Include="Controllers\AdminController.cs" />
+    <Compile Include="Controllers\BaseController.cs" />
+    <Compile Include="Controllers\FilesController.cs" />
+    <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Controllers\LecturerController.cs" />
+    <Compile Include="Controllers\NotificationsController.cs" />
+    <Compile Include="Controllers\PaymentController.cs" />
+    <Compile Include="Controllers\StudentController.cs" />
+    <Compile Include="Controllers\TutorApplicationController.cs" />
+    <Compile Include="Controllers\TutorController.cs" />
+    <Compile Include="Data\Db.cs" />
+    <Compile Include="Filters\FriendlyErrorAttribute.cs" />
+    <Compile Include="Filters\RoleAuthorizeAttribute.cs" />
+    <Compile Include="Controllers\Api\ApiControllerBase.cs" />
+    <Compile Include="Controllers\Api\ApiV1Controller.cs" />
+    <Compile Include="Services\RegistrationRules.cs" />
+    <Compile Include="Services\PrivacyService.cs" />
+    <Compile Include="Services\ApiTokenService.cs" />
+    <Compile Include="Services\HolidayService.cs" />
+    <Compile Include="Helpers\Clock.cs" />
+    <Compile Include="Controllers\AssistantController.cs" />
+    <Compile Include="Services\CourseCatalog.cs" />
+    <Compile Include="Services\AiService.cs" />
+    <Compile Include="Services\OfflineStudyHelper.cs" />
+    <Compile Include="Services\NetworkAddress.cs" />
+    <Compile Include="Services\SouthAfricanBanks.cs" />
+    <Compile Include="Filters\RequestTimingAttribute.cs" />
+    <Compile Include="Services\NotificationLinks.cs" />
+    <Compile Include="Services\AttendanceAutoMarker.cs" />
+    <Compile Include="Global.asax.cs" >
+      <DependentUpon>Global.asax</DependentUpon>
+    </Compile>
+    <Compile Include="Helpers\Ui.cs" />
+    <Compile Include="Models\Entities.cs" />
+    <Compile Include="Models\ViewModels.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\AppConfig.cs" />
+    <Compile Include="Services\AppLog.cs" />
+    <Compile Include="Services\EmailService.cs" />
+    <Compile Include="Filters\DatabaseReadyAttribute.cs" />
+    <Compile Include="Controllers\SetupController.cs" />
+    <Compile Include="Services\DatabaseSetup.cs" />
+    <Compile Include="Services\FileStorage.cs" />
+    <Compile Include="Services\PasswordHasher.cs" />
+    <Compile Include="Services\PayFastService.cs" />
+    <Compile Include="Services\PaymentProcessor.cs" />
+    <Compile Include="Services\Payouts\IPayoutProvider.cs" />
+    <Compile Include="Services\Payouts\LoggingPayoutProvider.cs" />
+    <Compile Include="Services\Payouts\PayoutProviderFactory.cs" />
+    <Compile Include="Services\Payouts\PayoutService.cs" />
+    <Compile Include="Services\SecretProtector.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Content\site.css" />
+    <Content Include="Content\landing.css" />
+    <Content Include="Views\Shared\_PublicLayout.cshtml" />
+    <Content Include="Views\Shared\Schedule.cshtml" />
+    <Content Include="Views\Setup\Index.cshtml" />
+    <Content Include="Global.asax" />
+    <Content Include="Scripts\site.js" />
+    <Content Include="Views\Account\ForgotPassword.cshtml" />
+    <Content Include="Views\Account\Login.cshtml" />
+    <Content Include="Views\Account\Register.cshtml" />
+    <Content Include="Views\Account\ResetPassword.cshtml" />
+    <Content Include="Views\Account\Settings.cshtml" />
+    <Content Include="Views\Admin\Analytics.cshtml" />
+    <Content Include="Views\Admin\Application.cshtml" />
+    <Content Include="Views\Admin\Applications.cshtml" />
+    <Content Include="Views\Admin\Attendance.cshtml" />
+    <Content Include="Views\Admin\Courses.cshtml" />
+    <Content Include="Views\Admin\CreateCourse.cshtml" />
+    <Content Include="Views\Admin\CreateLecturer.cshtml" />
+    <Content Include="Views\Admin\Dashboard.cshtml" />
+    <Content Include="Views\Admin\EditUser.cshtml" />
+    <Content Include="Views\Admin\Modules.cshtml" />
+    <Content Include="Views\Admin\Transactions.cshtml" />
+    <Content Include="Views\Admin\Users.cshtml" />
+    <Content Include="Views\Home\Index.cshtml" />
+    <Content Include="Views\Home\NotFound.cshtml" />
+    <Content Include="Views\Lecturer\Application.cshtml" />
+    <Content Include="Views\Lecturer\Applications.cshtml" />
+    <Content Include="Views\Lecturer\AssignTutors.cshtml" />
+    <Content Include="Views\Lecturer\Attendance.cshtml" />
+    <Content Include="Views\Lecturer\Content.cshtml" />
+    <Content Include="Views\Lecturer\Dashboard.cshtml" />
+    <Content Include="Views\Lecturer\Progress.cshtml" />
+    <Content Include="Views\Lecturer\Tutorials.cshtml" />
+    <Content Include="Views\Payment\Checkout.cshtml" />
+    <Content Include="Views\Payment\Return.cshtml" />
+    <Content Include="Views\Shared\Error.cshtml" />
+    <Content Include="Views\Shared\_ApplicationDetails.cshtml" />
+    <Content Include="Views\Shared\_AttendanceTable.cshtml" />
+    <Content Include="Views\Shared\_AuthLayout.cshtml" />
+    <Content Include="Views\Shared\_Layout.cshtml" />
+    <Content Include="Views\Student\Attendance.cshtml" />
+    <Content Include="Views\Student\Book.cshtml" />
+    <Content Include="Views\Student\Bookings.cshtml" />
+    <Content Include="Views\Student\CheckInResult.cshtml" />
+    <Content Include="Views\Student\Dashboard.cshtml" />
+    <Content Include="Views\Student\FindTutor.cshtml" />
+    <Content Include="Views\Student\Modules.cshtml" />
+    <Content Include="Views\Student\Tutorial.cshtml" />
+    <Content Include="Views\Student\Tutorials.cshtml" />
+    <Content Include="Views\TutorApplication\Apply.cshtml" />
+    <Content Include="Views\TutorApplication\Status.cshtml" />
+    <Content Include="Views\Tutor\Announcements.cshtml" />
+    <Content Include="Views\Tutor\Availability.cshtml" />
+    <Content Include="Views\Tutor\Banking.cshtml" />
+    <Content Include="Views\Tutor\ClassRegister.cshtml" />
+    <Content Include="Views\Tutor\Content.cshtml" />
+    <Content Include="Views\Tutor\Dashboard.cshtml" />
+    <Content Include="Views\Tutor\QrCode.cshtml" />
+    <Content Include="Views\Tutor\Register.cshtml" />
+    <Content Include="Views\Tutor\Registers.cshtml" />
+    <Content Include="Views\Tutor\Reports.cshtml" />
+    <Content Include="Views\Tutor\Sessions.cshtml" />
+    <Content Include="Views\Tutor\Tutorials.cshtml" />
+    <Content Include="Views\Tutor\_AssignmentOptions.cshtml" />
+    <Content Include="Views\Tutor\_NoAssignments.cshtml" />
+    <Content Include="Views\Tutor\_Sheet.cshtml" />
+    <Content Include="Views\_ViewStart.cshtml" />
+    <Content Include="Views\web.config" />
+    <Content Include="Views\Home\Privacy.cshtml" />
+    <Content Include="Views\Admin\Faculties.cshtml" />
+    <Content Include="Views\Shared\_CourseCascade.cshtml" />
+    <Content Include="Views\Assistant\Index.cshtml" />
+    <Content Include="Scripts\qrcode-generator.js" />
+    <Content Include="Views\Admin\Email.cshtml" />
+    <Content Include="Views\Shared\_ApplicationNotes.cshtml" />
+    <Content Include="Views\Admin\UserDetails.cshtml" />
+    <Content Include="Views\Shared\_CatalogFilter.cshtml" />
+    <Content Include="Views\Shared\_DataTableCard.cshtml" />
+    <Content Include="Views\Payment\BankCheckout.cshtml" />
+    <Content Include="Views\Payment\TutorNotPayable.cshtml" />
+    <Content Include="Views\Shared\_ModuleRows.cshtml" />
+    <Content Include="Views\Payment\CardCheckout.cshtml" />
+    <Content Include="Views\Tutor\EditTutorial.cshtml" />
+    <Content Include="Views\Notifications\Index.cshtml" />
+    <Content Include="Views\Student\Content.cshtml" />
+    <Content Include="Views\Tutor\Modules.cshtml" />
+    <Content Include="Views\Lecturer\Modules.cshtml" />
+    <!-- The database scripts are published inside App_Data so the Setup page can install the database on a host. -->
+    <Content Include="..\Database\01_Schema.sql">
+      <Link>App_Data\Database\01_Schema.sql</Link>
+    </Content>
+    <Content Include="..\Database\02_StoredProcedures.sql">
+      <Link>App_Data\Database\02_StoredProcedures.sql</Link>
+    </Content>
+    <Content Include="..\Database\03_SeedData.sql">
+      <Link>App_Data\Database\03_SeedData.sql</Link>
+    </Content>
+    <Content Include="..\Database\04_Upgrade.sql">
+      <Link>App_Data\Database\04_Upgrade.sql</Link>
+    </Content>
+    <Content Include="..\Database\05_MoreDemoUsers.sql">
+      <Link>App_Data\Database\05_MoreDemoUsers.sql</Link>
+    </Content>
+    <None Include="Web.Release.config">
+      <DependentUpon>Web.config</DependentUpon>
+    </None>
+    <Content Include="Web.config" />
+    <Content Include="App_Data\.gitkeep" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="App_Data\" />
+  </ItemGroup>
+  <PropertyGroup>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">16.0</VisualStudioVersion>
+    <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+  </PropertyGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets" Condition="'$(VSToolsPath)' != ''" />
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" Condition="false" />
+  <ProjectExtensions>
+    <VisualStudio>
+      <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">
+        <WebProjectProperties>
+          <UseIIS>True</UseIIS>
+          <AutoAssignPort>True</AutoAssignPort>
+          <DevelopmentServerPort>44380</DevelopmentServerPort>
+          <DevelopmentServerVPath>/</DevelopmentServerVPath>
+          <IISUrl>http://localhost:44380/</IISUrl>
+          <NTLMAuthentication>False</NTLMAuthentication>
+          <UseCustomServer>False</UseCustomServer>
+          <CustomServerUrl></CustomServerUrl>
+          <SaveServerSettingsInUserFile>False</SaveServerSettingsInUserFile>
+        </WebProjectProperties>
+      </FlavorProperties>
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>

@@ -1,0 +1,65 @@
+﻿@model DashboardViewModel
+@{
+    ViewBag.Title = "Dashboard";
+    var modules = (List<Module>)ViewBag.Modules;
+    var first = (Session["FirstName"] as string) ?? "";
+}
+<div class="page-head">
+    <div><h1>Welcome, @first</h1><p>An overview of the modules you lecture and the tutoring around them.</p></div>
+    <div class="page-actions">
+        <a class="btn btn-secondary" href="@Url.Action("Content")"><i class="fa-solid fa-upload"></i>Share content</a>
+        <a class="btn btn-primary" href="@Url.Action("AssignTutors")"><i class="fa-solid fa-user-plus"></i>Assign a tutor</a>
+    </div>
+</div>
+
+<div class="stats mb">
+    <div class="stat"><div class="stat-top">Courses<span class="stat-icon"><i class="fa-solid fa-graduation-cap"></i></span></div><div class="stat-value">@Model.Stat("CourseCount")</div></div>
+    <div class="stat"><div class="stat-top">Modules<span class="stat-icon info"><i class="fa-solid fa-book"></i></span></div><div class="stat-value">@Model.Stat("ModuleCount")</div></div>
+    <div class="stat"><div class="stat-top">Tutor assignments<span class="stat-icon success"><i class="fa-solid fa-user-check"></i></span></div><div class="stat-value">@Model.Stat("AssignmentCount")</div></div>
+    <a class="stat feature" href="@Url.Action("Applications")" style="color:inherit;text-decoration:none"><div class="stat-top">Applications to review<span class="stat-icon warning"><i class="fa-solid fa-file-signature"></i></span></div><div class="stat-value">@Model.Stat("ApplicationsToReview")</div><div class="stat-note">@Model.Stat("ContentToReview") tutor uploads to review</div></a>
+</div>
+
+<div class="grid grid-main">
+    <div class="card">
+        <div class="card-head"><h2>Your modules</h2><a href="@Url.Action("AssignTutors")">Manage tutors</a></div>
+        @if (modules.Count == 0)
+        {
+            <div class="empty"><i class="fa-solid fa-book"></i><p>No modules are linked to you yet. An administrator sets the lecturer for each module.</p></div>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table class="table">
+                    <thead><tr><th>Module</th><th>Year</th><th>Students</th><th>Tutors</th></tr></thead>
+                    <tbody>
+                        @foreach (var m in modules)
+                        {
+                            <tr>
+                                <td><span class="tag">@m.Code</span> @m.Name</td>
+                                <td>@m.YearLevel</td>
+                                <td>@m.StudentCount</td>
+                                <td>@if (m.TutorCount == 0) { <span class="badge badge-danger">None</span> } else { @m.TutorCount }</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+    <div class="card">
+        <div class="card-head"><h2>Recent activity</h2></div>
+        @if (Model.Activity.Count == 0)
+        {
+            <div class="empty"><p>Nothing yet.</p></div>
+        }
+        else
+        {
+            <ul class="list">
+                @foreach (var a in Model.Activity)
+                {
+                    <li class="list-item"><span class="feed-dot"></span><div class="list-main"><div class="small">@a.Message</div><div class="list-meta">@Ui.Ago(a.CreatedAt)</div></div></li>
+                }
+            </ul>
+        }
+    </div>
+</div>

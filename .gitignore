@@ -1,0 +1,8 @@
+bin/
+obj/
+packages/
+.vs/
+*.user
+TutorConnect/App_Data/logs/
+TutorConnect/App_Data/uploads/
+TutorConnect/App_Data/*.log

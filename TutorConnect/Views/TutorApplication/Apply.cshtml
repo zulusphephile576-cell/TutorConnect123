@@ -1,0 +1,98 @@
+﻿@model ApplicationFormViewModel
+@{
+    ViewBag.Title = "Apply to tutor";
+}
+<div class="page-head">
+    <div><h1>Apply to tutor</h1><p>Tell us which module you'd like to tutor and how you did in it. A lecturer reviews your application and recommends a decision; an administrator makes the final call and emails you at your personal address.</p></div>
+    <div class="page-actions"><a class="btn btn-secondary" href="@Url.Action("Status")">Check an existing application</a></div>
+</div>
+
+@using (Html.BeginForm("Apply", "TutorApplication", FormMethod.Post, new { enctype = "multipart/form-data", novalidate = "novalidate" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true, "", new { @class = "alert alert-error" })
+    <div class="stack">
+        <div class="card">
+            <div class="card-head"><div><h2>About you</h2><p>Use your university email; approved tutors sign in with it.</p></div></div>
+            <div class="card-body form-grid">
+                <div class="field">@Html.LabelFor(m => m.FirstName)@Html.TextBoxFor(m => m.FirstName, new { autocomplete = "given-name" })@Html.ValidationMessageFor(m => m.FirstName)</div>
+                <div class="field">@Html.LabelFor(m => m.LastName)@Html.TextBoxFor(m => m.LastName, new { autocomplete = "family-name" })@Html.ValidationMessageFor(m => m.LastName)</div>
+                <div class="field">@Html.LabelFor(m => m.StudentNumber)@Html.TextBoxFor(m => m.StudentNumber)@Html.ValidationMessageFor(m => m.StudentNumber)</div>
+                <div class="field">@Html.LabelFor(m => m.Phone) <span class="hint">Optional</span>@Html.TextBoxFor(m => m.Phone, new { type = "tel" })@Html.ValidationMessageFor(m => m.Phone)</div>
+                <div class="field">@Html.LabelFor(m => m.Email)@Html.TextBoxFor(m => m.Email, new { type = "email" })@Html.ValidationMessageFor(m => m.Email)</div>
+                <div class="field">@Html.LabelFor(m => m.PersonalEmail)@Html.TextBoxFor(m => m.PersonalEmail, new { type = "email" })<span class="hint">Your decision and login details are sent here.</span>@Html.ValidationMessageFor(m => m.PersonalEmail)</div>
+
+                @Html.Partial("_CourseCascade", new CourseCascadeModel { Faculties = Model.Faculties, Departments = Model.Departments, Courses = Model.Courses,
+                    FacultyId = Model.FacultyId, DepartmentId = Model.DepartmentId, CourseId = Model.CourseId, FacultyLabel = "Your faculty" })
+                <div class="field">@Html.LabelFor(m => m.CurrentYear)@Html.DropDownListFor(m => m.CurrentYear, Enumerable.Range(1, 7).Select(y => new SelectListItem { Text = "Year " + y, Value = y.ToString() }), "Choose your year")@Html.ValidationMessageFor(m => m.CurrentYear)</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><div><h2>What you'd tutor</h2><p>Pick the year of study first; the module list follows it.</p></div></div>
+            <div class="card-body form-grid">
+                <div class="field">
+                    @Html.LabelFor(m => m.TutorYear)
+                    @Html.DropDownListFor(m => m.TutorYear, Enumerable.Range(1, 7).Select(y => new SelectListItem { Text = "Year " + y + " students", Value = y.ToString() }), "Choose a year", new { data_year_select = "" })
+                    @Html.ValidationMessageFor(m => m.TutorYear)
+                </div>
+                <div class="field">
+                    @Html.LabelFor(m => m.ModuleId)
+                    <select id="ModuleId" name="ModuleId" data-module-select>
+                        <option value="">Choose a module</option>
+                        @foreach (var m in Model.Modules)
+                        {
+                            <option value="@m.ModuleId" data-year="@m.YearLevel" @(Model.ModuleId == m.ModuleId ? "selected" : null)>@m.Code, @m.Name</option>
+                        }
+                    </select>
+                    @Html.ValidationMessageFor(m => m.ModuleId)
+                </div>
+                <div class="field">@Html.LabelFor(m => m.ModuleMark)@Html.TextBoxFor(m => m.ModuleMark, new { type = "number", min = "0", max = "100", step = "0.1" })@Html.ValidationMessageFor(m => m.ModuleMark)</div>
+                <div class="field full">
+                    @Html.LabelFor(m => m.Motivation)
+                    @Html.TextAreaFor(m => m.Motivation, new { maxlength = "2000", rows = "6", placeholder = "Why this module, how you explain things, any tutoring or mentoring you've done..." })
+                    <span class="hint">At least 50 characters.</span>
+                    @Html.ValidationMessageFor(m => m.Motivation)
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><div><h2>Documents</h2><p>All three documents are required: student card, academic transcript and CV. Cards and transcripts can be PDF, JPG, PNG or HEIC; the CV PDF or Word. Up to 10 MB each. Only the reviewing lecturer and administrators can open them.</p></div></div>
+            <div class="card-body form-grid">
+                <div class="field">
+                    <span class="label">Student card <span class="req" aria-hidden="true">*</span></span>
+                    <label class="dropzone" data-dropzone data-required data-max-mb="10" data-accept=".pdf,.jpg,.jpeg,.png,.heic,.webp">
+                        <input type="file" id="IdDocument" name="IdDocument" required aria-required="true" accept=".pdf,.jpg,.jpeg,.png,.heic,.webp,image/*,application/pdf" />
+                        <span class="dz-icon"><i class="fa-solid fa-id-badge"></i></span>
+                        <span class="dz-text"><b data-dz-name>Choose a file or drag it here</b><small data-dz-meta>A clear copy of both sides of your student card</small></span>
+                        <button type="button" class="dz-clear" data-dz-clear aria-label="Remove file" hidden><i class="fa-solid fa-xmark"></i></button>
+                    </label>
+                    @Html.ValidationMessageFor(m => m.IdDocument)
+                </div>
+                <div class="field">
+                    <span class="label">Academic transcript <span class="req" aria-hidden="true">*</span></span>
+                    <label class="dropzone" data-dropzone data-required data-max-mb="10" data-accept=".pdf,.jpg,.jpeg,.png,.heic,.webp">
+                        <input type="file" id="Transcript" name="Transcript" required aria-required="true" accept=".pdf,.jpg,.jpeg,.png,.heic,.webp,image/*,application/pdf" />
+                        <span class="dz-icon"><i class="fa-solid fa-file-lines"></i></span>
+                        <span class="dz-text"><b data-dz-name>Choose a file or drag it here</b><small data-dz-meta>Must show your final mark for the module</small></span>
+                        <button type="button" class="dz-clear" data-dz-clear aria-label="Remove file" hidden><i class="fa-solid fa-xmark"></i></button>
+                    </label>
+                    @Html.ValidationMessageFor(m => m.Transcript)
+                </div>
+                <div class="field full">
+                    <span class="label">CV <span class="req" aria-hidden="true">*</span></span>
+                    <label class="dropzone" data-dropzone data-required data-max-mb="10" data-accept=".pdf,.doc,.docx">
+                        <input type="file" id="Cv" name="Cv" required aria-required="true" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+                        <span class="dz-icon"><i class="fa-solid fa-file-lines"></i></span>
+                        <span class="dz-text"><b data-dz-name>Choose a file or drag it here</b><small data-dz-meta>Your curriculum vitae, PDF or Word (.doc, .docx)</small></span>
+                        <button type="button" class="dz-clear" data-dz-clear aria-label="Remove file" hidden><i class="fa-solid fa-xmark"></i></button>
+                    </label>
+                    @Html.ValidationMessageFor(m => m.Cv)
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions"><button type="submit" class="btn btn-primary btn-lg">Submit application</button></div>
+    </div>
+}

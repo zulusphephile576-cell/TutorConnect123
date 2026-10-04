@@ -1,0 +1,88 @@
+﻿@model RegisterViewModel
+@{
+    ViewBag.Title = "Create your account";
+    ViewBag.Wide = true;
+    Layout = "~/Views/Shared/_AuthLayout.cshtml";
+    var maxDob = TutorConnect.Helpers.Clock.Today.AddYears(-14).ToString("yyyy-MM-dd");
+}
+<a class="back-link" href="@Url.Action("Index", "Home")"><i class="fa-solid fa-arrow-left"></i>Back to home</a>
+<h2>Create your student account</h2>
+<p class="text-2">It takes about two minutes. Your modules for your course and year are registered for you, and you'll sign in straight afterwards.</p>
+
+@using (Html.BeginForm("Register", "Account", FormMethod.Post, new { novalidate = "novalidate", @class = "reg-form" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true, "", new { @class = "alert alert-error" })
+
+    <section class="reg-section">
+        <div class="reg-section-head"><span class="reg-n">1</span><div><h3>About you</h3><p>As it appears on your student card.</p></div></div>
+        <div class="form-grid">
+            <div class="field">@Html.LabelFor(m => m.FirstName)@Html.TextBoxFor(m => m.FirstName, new { autocomplete = "given-name", autofocus = "autofocus" })@Html.ValidationMessageFor(m => m.FirstName)</div>
+            <div class="field">@Html.LabelFor(m => m.LastName)@Html.TextBoxFor(m => m.LastName, new { autocomplete = "family-name" })@Html.ValidationMessageFor(m => m.LastName)</div>
+            <div class="field">
+                @Html.LabelFor(m => m.DateOfBirth)
+                <input type="date" id="DateOfBirth" name="DateOfBirth" value="@(Model.DateOfBirth.HasValue ? Model.DateOfBirth.Value.ToString("yyyy-MM-dd") : "")" max="@maxDob" autocomplete="bday" />
+                @Html.ValidationMessageFor(m => m.DateOfBirth)
+            </div>
+            <div class="field">
+                <label for="Gender">Gender <span class="hint">Optional</span></label>
+                <select id="Gender" name="Gender">
+                    <option value="">Choose</option>
+                    @foreach (var g in RegisterViewModel.Genders) { <option @(Model.Gender == g ? "selected" : null)>@g</option> }
+                </select>
+                @Html.ValidationMessageFor(m => m.Gender)
+            </div>
+            <div class="field full">@Html.LabelFor(m => m.Phone)@Html.TextBoxFor(m => m.Phone, new { type = "tel", autocomplete = "tel", placeholder = "e.g. 071 234 5678" })<span class="hint">Tutors may use this to reach you about a session.</span>@Html.ValidationMessageFor(m => m.Phone)</div>
+        </div>
+    </section>
+
+    <section class="reg-section">
+        <div class="reg-section-head"><span class="reg-n">2</span><div><h3>Your studies</h3><p>Choose your faculty, then your department, then your course. This decides which modules and tutors you see.</p></div></div>
+        <div class="form-grid">
+            <div class="field">@Html.LabelFor(m => m.Email)@Html.TextBoxFor(m => m.Email, new { type = "email", autocomplete = "email", placeholder = "you@university.ac.za" })<span class="hint">You'll sign in with this.</span>@Html.ValidationMessageFor(m => m.Email)</div>
+            <div class="field">@Html.LabelFor(m => m.StudentNumber)@Html.TextBoxFor(m => m.StudentNumber, new { autocomplete = "off" })@Html.ValidationMessageFor(m => m.StudentNumber)</div>
+            @Html.Partial("_CourseCascade", new CourseCascadeModel { Faculties = Model.Faculties, Departments = Model.Departments, Courses = Model.Courses,
+                FacultyId = Model.FacultyId, DepartmentId = Model.DepartmentId, CourseId = Model.CourseId,
+                CourseHint = "Your modules for this course and your year are registered for you automatically." })
+            <div class="field">
+                @Html.LabelFor(m => m.YearOfStudy)
+                @Html.DropDownListFor(m => m.YearOfStudy, Enumerable.Range(1, 4).Select(y => new SelectListItem { Text = "Year " + y, Value = y.ToString() }), "Choose your year")
+                @Html.ValidationMessageFor(m => m.YearOfStudy)
+            </div>
+            <div class="field"><label for="Campus">Campus <span class="hint">Optional</span></label>@Html.TextBoxFor(m => m.Campus, new { placeholder = "e.g. Steve Biko campus" })@Html.ValidationMessageFor(m => m.Campus)</div>
+        </div>
+    </section>
+
+    <section class="reg-section">
+        <div class="reg-section-head"><span class="reg-n">3</span><div><h3>Emergency contact <span class="hint">Optional</span></h3><p>Only used if something happens during an in-person session.</p></div></div>
+        <div class="form-grid">
+            <div class="field">@Html.LabelFor(m => m.EmergencyContactName)@Html.TextBoxFor(m => m.EmergencyContactName, new { autocomplete = "off" })@Html.ValidationMessageFor(m => m.EmergencyContactName)</div>
+            <div class="field">@Html.LabelFor(m => m.EmergencyContactPhone)@Html.TextBoxFor(m => m.EmergencyContactPhone, new { type = "tel", autocomplete = "off" })@Html.ValidationMessageFor(m => m.EmergencyContactPhone)</div>
+        </div>
+    </section>
+
+    <section class="reg-section">
+        <div class="reg-section-head"><span class="reg-n">4</span><div><h3>Password</h3><p>At least 8 characters. Mixing letters, numbers and symbols makes it stronger.</p></div></div>
+        <div class="form-grid">
+            <div class="field">@Html.LabelFor(m => m.Password)@Html.PasswordFor(m => m.Password, new { autocomplete = "new-password", data_strength = "" })@Html.ValidationMessageFor(m => m.Password)</div>
+            <div class="field">@Html.LabelFor(m => m.ConfirmPassword)@Html.PasswordFor(m => m.ConfirmPassword, new { autocomplete = "new-password" })@Html.ValidationMessageFor(m => m.ConfirmPassword)</div>
+        </div>
+        <label class="check" style="margin-top:14px">
+            <input type="checkbox" name="AcceptTerms" value="true" @(Model.AcceptTerms ? "checked" : null) />
+            <span><b>I confirm these details are correct</b><br /><span class="muted small">and understand that my attendance at sessions and tutorials is recorded.</span></span>
+        </label>
+        <input type="hidden" name="AcceptTerms" value="false" />
+        @Html.ValidationMessageFor(m => m.AcceptTerms)
+        <label class="check">
+            <input type="checkbox" name="AcceptPrivacy" value="true" @(Model.AcceptPrivacy ? "checked" : null) />
+            <span><b>I accept the <a href="@Url.Action("Privacy", "Home")" target="_blank" rel="noopener">privacy notice</a></b><br /><span class="muted small">TutorConnect processes your personal information under POPIA only to run tutoring at your university. You can download or ask us to delete it at any time.</span></span>
+        </label>
+        <input type="hidden" name="AcceptPrivacy" value="false" />
+        @Html.ValidationMessageFor(m => m.AcceptPrivacy)
+    </section>
+
+    <div class="form-actions" style="justify-content:space-between;align-items:center">
+        <span class="muted small">Already registered? <a href="@Url.Action("Login", "Account")">Sign in</a></span>
+        <button type="submit" class="btn btn-primary btn-lg">Create account</button>
+    </div>
+}

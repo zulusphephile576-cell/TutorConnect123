@@ -1,0 +1,39 @@
+﻿@model List<TutorApplication>
+@{
+    ViewBag.Title = "Tutor applications";
+    var status = ViewBag.Status as string;
+}
+<div class="page-head">
+    <div><h1>Tutor applications</h1><p>Assign each application to a lecturer for a recommendation, then approve or reject it. Approving creates the tutor account and emails the login details.</p></div>
+</div>
+<nav class="tabs" aria-label="Filter applications">
+    <a class="tab @(string.IsNullOrEmpty(status) ? "active" : null)" href="@Url.Action("Applications")">All</a>
+    <a class="tab @(status == "open" ? "active" : null)" href="@Url.Action("Applications", new { status = "open" })">In progress</a>
+    <a class="tab @(status == "decided" ? "active" : null)" href="@Url.Action("Applications", new { status = "decided" })">Decided</a>
+</nav>
+<div class="card">
+    <div class="table-tools" data-filter-table="#apps">
+        <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Search applicant or module" aria-label="Search applications" /></div>
+    </div>
+    <div class="table-wrap">
+        <table class="table" id="apps">
+            <thead><tr><th>Applicant</th><th>Module</th><th>Mark</th><th>Lecturer</th><th>Recommendation</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var a in Model)
+                {
+                    <tr>
+                        <td><div class="person">@Ui.Avatar(a.FullName, "sm")<div><div>@a.FullName</div><div class="small muted">@Ui.Date(a.SubmittedAt)</div></div></div></td>
+                        <td><span class="tag">@a.ModuleCode</span> <span class="small muted">Y@a.TutorYear</span></td>
+                        <td class="mono">@a.ModuleMark.ToString("0.#")%</td>
+                        <td>@(a.LecturerName ?? "Not assigned")</td>
+                        <td>@(a.LecturerRecommendation == null ? Html.Raw("<span class=\"muted small\">Waiting</span>") : Ui.Badge(a.LecturerRecommendation == "Approve" ? "Recommended" : "NotRecommended"))</td>
+                        <td>@Ui.Badge(a.Status)</td>
+                        <td class="right"><a class="btn @(a.IsDecided ? "btn-secondary" : "btn-primary") btn-sm" href="@Url.Action("Application", new { id = a.ApplicationId })">@(a.IsDecided ? "View" : "Open")</a></td>
+                    </tr>
+                }
+                <tr class="no-results"><td colspan="7"><div class="empty">Nothing matches.</div></td></tr>
+            </tbody>
+        </table>
+    </div>
+    @if (Model.Count == 0) { <div class="empty"><i class="fa-solid fa-file-signature"></i><p>No applications here.</p></div> }
+</div>

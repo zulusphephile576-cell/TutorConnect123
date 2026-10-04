@@ -1,0 +1,59 @@
+﻿@{
+    var flash = TempData["Flash"] as string;
+    var flashType = (TempData["FlashType"] as string) ?? "success";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@(ViewBag.Title ?? "TutorConnect") | TutorConnect</title>
+    <meta name="description" content="Book tutors, pay securely, run tutorials and track attendance in one place." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" /></noscript>
+    <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" /></noscript>
+    <link rel="stylesheet" href="@Ui.Asset("~/Content/site.css")" />
+    <link rel="stylesheet" href="@Ui.Asset("~/Content/landing.css")" />
+</head>
+<body class="landing">
+    <a class="sr-only" href="#main">Skip to content</a>
+    <header class="lp-nav">
+        <div class="lp-wrap lp-nav-inner">
+            <a class="brand" href="@Url.Action("Index", "Home")"><span class="brand-mark"><i class="fa-solid fa-graduation-cap"></i></span>TutorConnect</a>
+            <nav class="lp-links" aria-label="Page sections">
+                <a href="#how">How it works</a>
+                <a href="#features">Features</a>
+                <a href="#roles">Who it's for</a>
+                <a href="#faq">Questions</a>
+            </nav>
+            <div class="lp-nav-cta">
+                <a class="lp-signin" href="@Url.Action("Login", "Account")">Sign in</a>
+                <a class="btn btn-white btn-sm" href="@Url.Action("Register", "Account")">Create account</a>
+            </div>
+        </div>
+    </header>
+    @if (flash != null)
+    {
+        <div class="lp-wrap" style="padding-top:16px"><div class="alert alert-@flashType" role="status"><div class="alert-body">@flash</div></div></div>
+    }
+    <main id="main">@RenderBody()</main>
+    <footer class="lp-footer">
+        <div class="lp-wrap lp-footer-inner">
+            <div>
+                <a class="brand" href="@Url.Action("Index", "Home")"><span class="brand-mark"><i class="fa-solid fa-graduation-cap"></i></span>TutorConnect</a>
+                <p>Booking, payments, tutorials and attendance for university tutoring programmes.</p>
+            </div>
+            <div class="lp-footer-cols">
+                <div><b>Students</b><a href="@Url.Action("Register", "Account")">Create an account</a><a href="@Url.Action("Login", "Account", new { role = "Student" })">Sign in</a></div>
+                <div><b>Tutors</b><a href="@Url.Action("Apply", "TutorApplication")">Apply to tutor</a><a href="@Url.Action("Status", "TutorApplication")">Application status</a><a href="@Url.Action("Login", "Account", new { role = "Tutor" })">Tutor sign-in</a></div>
+                <div><b>Staff</b><a href="@Url.Action("Login", "Account", new { role = "Lecturer" })">Lecturer sign-in</a><a href="@Url.Action("Login", "Account", new { role = "Admin" })">Admin sign-in</a></div>
+            </div>
+        </div>
+        <div class="lp-wrap lp-footer-base"><span>&copy; @TutorConnect.Helpers.Clock.Now.Year TutorConnect</span><span><a href="@Url.Action("Privacy", "Home")">Privacy notice (POPIA)</a> &nbsp;|&nbsp; Payments processed securely by PayFast</span></div>
+    </footer>
+    <script src="@Ui.Asset("~/Scripts/site.js")"></script>
+</body>
+</html>

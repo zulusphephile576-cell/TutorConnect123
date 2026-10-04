@@ -1,0 +1,56 @@
+﻿@model List<ContentItem>
+@{
+    ViewBag.Title = "Course content";
+    var mods = Model.GroupBy(c => c.ModuleCode).OrderBy(g => g.Key).ToList();
+    var chosen = ViewBag.Module as string;
+    var weekAgo = TutorConnect.Helpers.Clock.Now.AddDays(-7);
+    Func<string, string> fileIcon = name =>
+    {
+        var ext = (System.IO.Path.GetExtension(name) ?? "").ToLowerInvariant();
+        if (ext == ".pdf") return "fa-file-pdf";
+        if (ext == ".doc" || ext == ".docx") return "fa-file-word";
+        if (ext == ".ppt" || ext == ".pptx") return "fa-file-powerpoint";
+        if (ext == ".xls" || ext == ".xlsx") return "fa-file-excel";
+        if (ext == ".zip") return "fa-file-zipper";
+        if (ext == ".jpg" || ext == ".jpeg" || ext == ".png") return "fa-file-image";
+        return "fa-file-lines";
+    };
+}
+<div class="page-head">
+    <div><h1>Course content</h1><p>Notes, slides and files your lecturers and tutors have sent for your modules.</p></div>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="card"><div class="empty"><i class="fa-solid fa-folder-open"></i><p>Nothing has been shared for your modules yet. You'll get a notification when something arrives.</p></div></div>
+}
+else
+{
+    <div class="card mb" data-filter-table="#content-list">
+        <div class="table-tools" style="border-bottom:0">
+            <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Search by title or file" aria-label="Search course content" /></div>
+            <select data-filter-attr="module" aria-label="Filter by module" style="width:auto">
+                <option value="">All modules</option>
+                @foreach (var g in mods) { <option value="@g.Key" @(chosen == g.Key ? "selected" : null)>@g.Key, @g.First().ModuleName (@g.Count())</option> }
+            </select>
+            <span class="muted small" style="margin-left:auto"><span data-filter-count>@Model.Count of @Model.Count</span> items</span>
+        </div>
+    </div>
+
+    <div id="content-list" class="content-grid">
+        @foreach (var c in Model)
+        {
+            <div class="card content-card" data-filter-item data-module="@c.ModuleCode">
+                <div class="content-icon"><i class="fa-solid @fileIcon(c.FileName)"></i></div>
+                <div class="content-body">
+                    <div class="content-top"><span class="tag">@c.ModuleCode</span>@if (c.UploadedAt > weekAgo) { <span class="badge badge-info">New</span> }</div>
+                    <h3>@c.Title</h3>
+                    @if (!string.IsNullOrWhiteSpace(c.Description)) { <p class="text-2 small" style="margin:4px 0 0">@c.Description</p> }
+                    <div class="list-meta" style="margin-top:8px">From @(c.UploaderName ?? "your lecturer") (@(c.UploaderRole == "Lecturer" ? "lecturer" : "tutor")), @Ui.Date(c.UploadedAt)</div>
+                </div>
+                <a class="btn btn-primary btn-sm content-dl" href="@Url.Action("Content", "Files", new { id = c.ContentId })" title="@c.FileName"><i class="fa-solid fa-download"></i>Download</a>
+            </div>
+        }
+        <div class="card no-results"><div class="empty"><i class="fa-solid fa-magnifying-glass"></i><p>Nothing matches your search.</p></div></div>
+    </div>
+}

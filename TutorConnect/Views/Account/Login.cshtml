@@ -1,0 +1,68 @@
+﻿@model LoginViewModel
+@{
+    ViewBag.Title = "Sign in";
+    Layout = "~/Views/Shared/_AuthLayout.cshtml";
+    var roles = new[] { "Student", "Tutor", "Lecturer", "Admin" };
+}
+@if (Model.JustRegistered)
+{
+    <h2>You're registered</h2>
+    <p class="text-2">Sign in with the password you just chose to open your student workspace.</p>
+}
+else
+{
+    <h2>Welcome back</h2>
+    <p class="text-2">Choose how you're signing in. If you're a student who also tutors, each role has its own sign-in.</p>
+}
+
+@using (Html.BeginForm("Login", "Account", FormMethod.Post, new { novalidate = "novalidate" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.ReturnUrl)
+    @Html.ValidationSummary(true, "", new { @class = "alert alert-error" })
+
+    <fieldset class="segmented" style="margin:18px 0 20px;border:0">
+        <legend class="sr-only">Sign in as</legend>
+        @foreach (var r in roles)
+        {
+            <label>
+                <input type="radio" name="Role" value="@r" @(Model.Role == r ? "checked" : null) />
+                <span>@r</span>
+            </label>
+        }
+    </fieldset>
+
+    <div class="stack" style="gap:16px">
+        <div class="field">
+            @Html.LabelFor(m => m.Email)
+            @if (string.IsNullOrEmpty(Model.Email))
+            {
+                @Html.TextBoxFor(m => m.Email, new { type = "email", autocomplete = "username", autofocus = "autofocus" })
+            }
+            else
+            {
+                @Html.TextBoxFor(m => m.Email, new { type = "email", autocomplete = "username" })
+            }
+            @Html.ValidationMessageFor(m => m.Email)
+        </div>
+        <div class="field">
+            <div class="spread"><label for="Password">Password</label><a class="small" href="@Url.Action("ForgotPassword", "Account")">Forgot password?</a></div>
+            @if (string.IsNullOrEmpty(Model.Email))
+            {
+                @Html.PasswordFor(m => m.Password, new { autocomplete = "current-password" })
+            }
+            else
+            {
+                @Html.PasswordFor(m => m.Password, new { autocomplete = "current-password", autofocus = "autofocus" })
+            }
+            @Html.ValidationMessageFor(m => m.Password)
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg btn-block">Sign in</button>
+    </div>
+}
+
+<div class="auth-links">
+    <span class="muted">New student? <a href="@Url.Action("Register", "Account")">Create an account</a></span>
+    <a href="@Url.Action("Apply", "TutorApplication")">Apply to tutor</a>
+</div>
+

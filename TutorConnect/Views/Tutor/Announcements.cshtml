@@ -1,0 +1,54 @@
+﻿@model List<Announcement>
+@{
+    ViewBag.Title = "Announcements";
+    var assignments = (List<TutorAssignment>)ViewBag.Assignments;
+}
+<div class="page-head">
+    <div><h1>Announcements</h1><p>Messages go to every student in the module and year you choose. They appear on their dashboard, and by email for students who opted in.</p></div>
+</div>
+
+<div class="grid grid-aside">
+    <div class="card">
+        <div class="card-head"><h2>Sent</h2></div>
+        @if (Model.Count == 0)
+        {
+            <div class="empty"><i class="fa-solid fa-bullhorn"></i><p>You haven't posted anything yet.</p></div>
+        }
+        else
+        {
+            <ul class="list">
+                @foreach (var a in Model)
+                {
+                    <li class="list-item" style="align-items:flex-start">
+                        <div class="list-main">
+                            <div class="spread"><div class="list-title">@a.Title</div><span class="small muted nowrap">@Ui.Ago(a.CreatedAt)</span></div>
+                            <div class="text-2 small" style="white-space:pre-line;margin:6px 0">@a.Message</div>
+                            <div class="list-meta"><span class="tag">@a.ModuleCode</span> Year @a.YearOfStudy</div>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+
+    <div class="card" style="align-self:start">
+        <div class="card-head"><h2>New announcement</h2></div>
+        @if (assignments.Count == 0)
+        {
+            <div class="card-body">@Html.Partial("_NoAssignments")</div>
+        }
+        else
+        {
+            using (Html.BeginForm("Announcements", "Tutor", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <div class="card-body stack" style="gap:14px">
+                    <div class="field"><label for="assignment">Send to</label><select id="assignment" name="assignment" required>@Html.Partial("_AssignmentOptions", assignments)</select></div>
+                    <div class="field"><label for="title">Title</label><input type="text" id="title" name="title" maxlength="150" required /></div>
+                    <div class="field"><label for="message">Message</label><textarea id="message" name="message" maxlength="2000" required></textarea></div>
+                    <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-paper-plane"></i>Send</button>
+                </div>
+            }
+        }
+    </div>
+</div>

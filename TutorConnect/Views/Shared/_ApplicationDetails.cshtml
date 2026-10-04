@@ -1,0 +1,60 @@
+﻿@model TutorApplication
+@* Applicant details, documents and review trail; shared by lecturer and admin pages. *@
+@{
+    var steps = new[] { "Submitted", "Lecturer review", "Recommendation", "Decision" };
+    var reached = Model.IsDecided ? 4 : Model.LecturerRecommendation != null ? 3 : Model.AssignedLecturerId.HasValue ? 2 : 1;
+}
+<div class="card">
+    <div class="card-head">
+        <div class="person">@Ui.Avatar(Model.FullName, "lg")<div><h2>@Model.FullName</h2><p>@Model.StudentNumber, @Model.CourseName, year @Model.CurrentYear</p></div></div>
+        @Ui.Badge(Model.Status)
+    </div>
+    <div class="card-body">
+        <dl class="dl">
+            <dt>Wants to tutor</dt><dd><span class="tag">@Model.ModuleCode</span> @Model.ModuleName, for year @Model.TutorYear students</dd>
+            <dt>Module mark</dt><dd><strong>@Model.ModuleMark.ToString("0.#")%</strong></dd>
+            <dt>University email</dt><dd>@Model.Email</dd>
+            <dt>Personal email</dt><dd>@Model.PersonalEmail</dd>
+            <dt>Phone</dt><dd>@(string.IsNullOrEmpty(Model.Phone) ? "Not given" : Model.Phone)</dd>
+            <dt>Submitted</dt><dd>@Ui.DateTime(Model.SubmittedAt)</dd>
+            <dt>Documents</dt>
+            <dd class="row">
+                @if (!string.IsNullOrEmpty(Model.IdDocumentPath)) { <a class="btn btn-secondary btn-sm" href="@Url.Action("Application", "Files", new { id = Model.ApplicationId, doc = "id" })"><i class="fa-regular fa-id-card"></i>Student card</a> }
+                @if (!string.IsNullOrEmpty(Model.TranscriptPath)) { <a class="btn btn-secondary btn-sm" href="@Url.Action("Application", "Files", new { id = Model.ApplicationId, doc = "transcript" })"><i class="fa-regular fa-file-lines"></i>Transcript</a> }
+                else { <span class="badge badge-danger">Transcript missing</span> }
+                @if (!string.IsNullOrEmpty(Model.CvPath)) { <a class="btn btn-secondary btn-sm" href="@Url.Action("Application", "Files", new { id = Model.ApplicationId, doc = "cv" })"><i class="fa-solid fa-file-lines"></i>CV</a> }
+                else { <span class="badge badge-danger">CV missing</span> }
+            </dd>
+        </dl>
+        <h3 style="margin:22px 0 8px">Motivation</h3>
+        <p class="quote">@Model.Motivation</p>
+    </div>
+</div>
+
+<div class="card mt">
+    <div class="card-head"><h2>Review trail</h2></div>
+    <div class="card-body">
+        <ol class="timeline">
+            @for (var i = 0; i < steps.Length; i++)
+            {
+                <li class="@(i + 1 < reached ? "done" : i + 1 == reached ? (Model.IsDecided ? "done" : "current") : null)">
+                    <b>@steps[i]</b>
+                    <div class="small muted">
+                        @if (i == 0) { @Ui.DateTime(Model.SubmittedAt) }
+                        @if (i == 1) { @(Model.LecturerName != null ? "Assigned to " + Model.LecturerName : "Waiting for an administrator to assign a lecturer") }
+                        @if (i == 2 && Model.LecturerRecommendation != null)
+                        {
+                            <span>@Model.LecturerName recommends <strong>@(Model.LecturerRecommendation == "Approve" ? "approving" : "rejecting")</strong>@(Model.RecommendedAt.HasValue ? ", " + Ui.Ago(Model.RecommendedAt.Value) : "")</span>
+                            if (!string.IsNullOrEmpty(Model.LecturerComment)) { <p class="quote" style="margin-top:6px">@Model.LecturerComment</p> }
+                        }
+                        @if (i == 3 && Model.IsDecided)
+                        {
+                            <span>@Model.Status@(Model.DecidedAt.HasValue ? ", " + Ui.DateTime(Model.DecidedAt.Value) : "")</span>
+                            if (!string.IsNullOrEmpty(Model.AdminFeedback)) { <p class="quote" style="margin-top:6px">@Model.AdminFeedback</p> }
+                        }
+                    </div>
+                </li>
+            }
+        </ol>
+    </div>
+</div>

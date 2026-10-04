@@ -1,0 +1,121 @@
+﻿@model List<Module>
+@{
+    ViewBag.Title = "Modules";
+    var lecturers = (List<User>)ViewBag.Lecturers;
+    var editing = ViewBag.Editing as Module;
+    var pending = (TempData["PendingModules"] as List<ModuleRow>) ?? new List<ModuleRow> { new ModuleRow() };
+}
+<div class="page-head">
+    <div><h1>Modules</h1><p>Each module has a year level and a lecturer. The lecturer assigns tutors and reviews content for it.</p></div>
+</div>
+
+@if (editing == null)
+{
+    <div class="card mb" id="add-modules">
+        <div class="card-head"><div><h2>Add modules</h2><p>Add as many as you need: a new row opens each time you fill one in. Link them to courses afterwards under Courses.</p></div></div>
+        @using (Html.BeginForm("AddModules", "Admin", FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            <div class="card-body">
+                @Html.Partial("_ModuleRows", pending, new ViewDataDictionary { { "Prefix", "modules" }, { "Lecturers", lecturers } })
+                <div class="form-actions" style="margin-top:14px"><button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i>Add modules</button></div>
+            </div>
+        }
+    </div>
+}
+
+<div class="@(editing == null ? "stack" : "grid grid-aside")">
+    <div class="card">
+        <div class="table-tools" data-filter-table="#modules">
+            <div class="search"><i class="fa-solid fa-magnifying-glass"></i><input type="search" placeholder="Search code, name or lecturer" aria-label="Search modules" /></div>
+            @Html.Partial("_CatalogFilter", (TutorConnect.Services.CourseCatalog)ViewBag.Catalog)
+            <select data-filter-attr="semester" aria-label="Filter by semester" style="width:auto">
+                <option value="">Both semesters</option><option value="1">Semester 1</option><option value="2">Semester 2</option>
+            </select>
+            <select data-filter-attr="year" aria-label="Filter by year level" style="width:auto">
+                <option value="">All years</option>
+                @for (var y = 1; y <= 4; y++) { <option value="@y">Year @y</option> }
+            </select>
+            <span class="muted small" style="margin-left:auto"><span data-filter-count>@Model.Count of @Model.Count</span> modules</span>
+        </div>
+        <div class="table-wrap">
+            <table class="table" id="modules">
+                <thead><tr><th>Module</th><th>Year</th><th>Semester</th><th>Lecturer</th><th>Courses</th><th class="right" title="Tutors assigned of the number the lecturer asked for">Tutors</th><th class="right">Students</th><th class="right"><span class="sr-only">Actions</span></th></tr></thead>
+                <tbody>
+                    @foreach (var m in Model)
+                    {
+                        <tr data-year="@m.YearLevel" data-semester="@m.Semester" data-faculties="@m.FacultyIds" data-departments="@m.DepartmentIds" data-courses="@m.CourseIds">
+                            <td><span class="tag">@m.Code</span><div class="small">@m.Name</div></td>
+                            <td>@m.YearLevel</td>
+                            <td><span class="sem-chip sem-@m.Semester">Semester @m.Semester</span></td>
+                            <td>@(m.LecturerName ?? "")@if (m.LecturerName == null) { <span class="badge badge-warning">No lecturer</span> }</td>
+                            <td class="small">@(string.IsNullOrEmpty(m.Courses) ? "Not linked" : m.Courses)</td>
+                            <td class="right">
+                                <span class="mono">@m.TutorCount of @m.TutorsNeeded</span>
+                                @if (m.TutorCount < m.TutorsNeeded) { <div><span class="badge badge-warning">@(m.TutorsNeeded - m.TutorCount) open</span></div> }
+                                else { <div><span class="badge badge-success">Filled</span></div> }
+                                <div class="small muted">@m.OpenSlots booking @(m.OpenSlots == 1 ? "slot" : "slots")</div>
+                            </td>
+                            <td class="right mono">@m.StudentCount</td>
+                            <td>
+                                <div class="actions">
+                                    <a class="btn btn-ghost btn-sm" href="@Url.Action("Modules", new { edit = m.ModuleId })" aria-label="Edit @m.Code"><i class="fa-regular fa-pen-to-square"></i></a>
+                                    @using (Html.BeginForm("DeleteModule", "Admin", new { id = m.ModuleId }, FormMethod.Post, new { data_confirm = "Delete " + m.Code + "? This can't be undone." }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-ghost btn-sm" aria-label="Delete @m.Code"><i class="fa-regular fa-trash-can"></i></button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    <tr class="no-results"><td colspan="8"><div class="empty">No modules match.</div></td></tr>
+                </tbody>
+            </table>
+        </div>
+        @if (Model.Count == 0) { <div class="empty"><i class="fa-solid fa-book"></i><p>No modules yet. Add one here or create a course with its modules.</p></div> }
+    </div>
+
+    @if (editing != null)
+    {
+    <div class="card" style="align-self:start">
+        <div class="card-head">
+            <div><h2>@(editing == null ? "Add a module" : "Edit " + editing.Code)</h2><p>@(editing == null ? "Link it to a course afterwards." : "Changes apply immediately.")</p></div>
+            @if (editing != null) { <a href="@Url.Action("Modules")">Cancel</a> }
+        </div>
+        @using (Html.BeginForm("SaveModule", "Admin", FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            if (editing != null) { <input type="hidden" name="moduleId" value="@editing.ModuleId" /> }
+            <div class="card-body stack" style="gap:14px">
+                <div class="form-grid">
+                    <div class="field"><label for="code">Code</label><input type="text" id="code" name="code" maxlength="20" value="@(editing == null ? "" : editing.Code)" required /></div>
+                    <div class="field">
+                        <label for="yearLevel">Year level</label>
+                        <select id="yearLevel" name="yearLevel">
+                            @for (var y = 1; y <= 7; y++) { <option value="@y" @(editing != null && editing.YearLevel == y ? "selected" : null)>Year @y</option> }
+                        </select>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="semester">Semester</label>
+                    <select id="semester" name="semester">
+                        <option value="1" @(editing != null && editing.Semester != 2 ? "selected" : null)>Semester 1 (first half of the year)</option>
+                        <option value="2" @(editing != null && editing.Semester == 2 ? "selected" : null)>Semester 2 (second half of the year)</option>
+                    </select>
+                </div>
+                <div class="field"><label for="name">Name</label><input type="text" id="name" name="name" maxlength="150" value="@(editing == null ? "" : editing.Name)" required /></div>
+                <div class="field">
+                    <label for="lecturerId">Lecturer</label>
+                    <select id="lecturerId" name="lecturerId">
+                        <option value="">No lecturer yet</option>
+                        @foreach (var l in lecturers) { <option value="@l.UserId" @(editing != null && editing.LecturerId == l.UserId ? "selected" : null)>@l.FullName</option> }
+                    </select>
+                </div>
+                <div class="field"><label for="description">Description <span class="hint">Optional</span></label><textarea id="description" name="description" maxlength="500" style="min-height:80px">@(editing == null ? "" : editing.Description)</textarea></div>
+                <button type="submit" class="btn btn-primary btn-block">@(editing == null ? "Add module" : "Save changes")</button>
+            </div>
+        }
+    </div>
+    }
+</div>

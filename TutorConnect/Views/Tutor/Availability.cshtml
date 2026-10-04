@@ -1,0 +1,87 @@
+﻿@model List<Slot>
+@{
+    ViewBag.Title = "Availability";
+    var upcoming = Model.Where(s => s.EndTime >= TutorConnect.Helpers.Clock.Now).ToList();
+    var holidays = (ViewBag.Holidays as List<PublicHoliday>) ?? new List<PublicHoliday>();
+    var tomorrow = TutorConnect.Helpers.Clock.Today.AddDays(1).ToString("yyyy-MM-dd");
+}
+<div class="page-head">
+    <div><h1>Availability</h1><p>Open time slots students can book. A student can book part of a slot; any leftover hour or more stays open automatically.</p></div>
+</div>
+
+<div class="grid grid-aside">
+    <div class="card">
+        <div class="card-head"><h2>Your slots</h2><span class="muted small">@upcoming.Count(s => !s.IsBooked) open, @upcoming.Count(s => s.IsBooked) booked</span></div>
+        @if (upcoming.Count == 0)
+        {
+            <div class="empty"><i class="fa-regular fa-calendar-plus"></i><p>You have no upcoming slots. Add one to start receiving bookings.</p></div>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table class="table">
+                    <thead><tr><th>Date</th><th>Time</th><th>Length</th><th>Status</th><th class="right"><span class="sr-only">Actions</span></th></tr></thead>
+                    <tbody>
+                        @foreach (var s in upcoming)
+                        {
+                            <tr>
+                                <td class="nowrap">@Ui.Date(s.StartTime)</td>
+                                <td class="nowrap mono">@Ui.Time(s.StartTime) &ndash; @Ui.Time(s.EndTime)</td>
+                                <td>@((s.EndTime - s.StartTime).TotalHours.ToString("0.#")) h</td>
+                                <td>
+                                    @if (s.IsBooked) { <span class="badge badge-info">Booked</span> if (s.StudentName != null) { <span class="small muted"> by @s.StudentName</span> } }
+                                    else { <span class="badge badge-success">Open</span> }
+                                </td>
+                                <td>
+                                    <div class="actions">
+                                        @if (!s.IsBooked)
+                                        {
+                                            using (Html.BeginForm("DeleteSlot", "Tutor", new { id = s.SlotId }, FormMethod.Post, new { data_confirm = "Remove this slot?" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-ghost btn-sm" aria-label="Remove slot"><i class="fa-regular fa-trash-can"></i></button>
+                                            }
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    <div class="card" style="align-self:start">
+        <div class="card-head"><div><h2>Add a slot</h2><p>Between 1 and 8 hours.</p></div></div>
+        @using (Html.BeginForm("AddSlot", "Tutor", FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            <div class="card-body stack" style="gap:14px">
+                <div class="field"><label for="date">Date</label><input type="date" id="date" name="date" value="@tomorrow" min="@TutorConnect.Helpers.Clock.Today.ToString("yyyy-MM-dd")" required /></div>
+                <div class="form-grid">
+                    <div class="field"><label for="startTime">From</label><input type="time" id="startTime" name="startTime" value="14:00" step="900" required /></div>
+                    <div class="field"><label for="endTime">To</label><input type="time" id="endTime" name="endTime" value="16:00" step="900" required /></div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block"><i class="fa-solid fa-plus"></i>Add slot</button>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="card mt" style="max-width:420px;margin-left:auto">
+    <div class="card-head"><div><h2>Upcoming public holidays</h2><p>Campus may be closed; students are less likely to book.</p></div></div>
+    @if (holidays.Count == 0)
+    {
+        <div class="empty" style="padding:16px"><p style="margin:0">No public holidays in the next 90 days.</p></div>
+    }
+    else
+    {
+        <ul class="list">
+            @foreach (var h in holidays)
+            {
+                <li class="list-item"><div class="date-tile"><b>@h.Date.Day</b><span>@h.Date.ToString("MMM")</span></div><div class="list-main"><div class="list-title">@h.Name</div><div class="list-meta">@h.Date.ToString("dddd")</div></div></li>
+            }
+        </ul>
+    }
+</div>
